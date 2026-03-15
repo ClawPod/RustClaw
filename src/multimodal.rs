@@ -213,6 +213,16 @@ async fn normalize_image_reference(
         return normalize_remote_image(source, max_bytes, remote_client).await;
     }
 
+    if let Some(base_url) = &config.public_base_url {
+        // If image is local and we have a public base URL, resolve it to an external URL.
+        // We assume the caller serves the workspace_dir at public_base_url.
+        let path = Path::new(source);
+        if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
+            let base = base_url.trim_end_matches('/');
+            return Ok(format!("{}/{}", base, file_name));
+        }
+    }
+
     normalize_local_image(source, max_bytes).await
 }
 
@@ -469,6 +479,29 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn prepare_messages_resolves_to_public_url() {
+        let config = MultimodalConfig {
+            max_images: 4,
+            max_image_size_mb: 5,
+            allow_remote_fetch: false,
+            public_base_url: Some("https://box.tailscale.net/uploads".to_string()),
+        };
+
+        let messages = vec![ChatMessage::user(
+            "Check [IMAGE:/tmp/screenshot_123.png]".to_string(),
+        )];
+
+        let prepared = prepare_messages_for_provider(&messages, &config)
+            .await
+            .unwrap();
+
+        assert!(prepared.contains_images);
+        let (_, refs) = parse_image_markers(&prepared.messages[0].content);
+        assert_eq!(refs.len(), 1);
+        assert_eq!(refs[0], "https://box.tailscale.net/uploads/screenshot_123.png");
+    }
+
+    #[tokio::test]
     async fn prepare_messages_normalizes_local_image_to_data_uri() {
         let temp = tempfile::tempdir().unwrap();
         let image_path = temp.path().join("sample.png");
@@ -507,8 +540,7 @@ mod tests {
         let config = MultimodalConfig {
             max_images: 1,
             max_image_size_mb: 5,
-            allow_remote_fetch: false,
-        };
+            allow_remote_fetch: false,            public_base_url: None,        };
 
         let error = prepare_messages_for_provider(&messages, &config)
             .await
@@ -550,6 +582,7 @@ mod tests {
             max_images: 4,
             max_image_size_mb: 1,
             allow_remote_fetch: false,
+            public_base_url: None,
         };
 
         let error = prepare_messages_for_provider(&messages, &config)

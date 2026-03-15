@@ -9,8 +9,6 @@ use std::time::Duration;
 
 /// Maximum time to wait for a screenshot command to complete.
 const SCREENSHOT_TIMEOUT_SECS: u64 = 15;
-/// Maximum base64 payload size to return (2 MB of base64 ≈ 1.5 MB image).
-const MAX_BASE64_BYTES: usize = 2_097_152;
 
 /// Tool for capturing screenshots using platform-native commands.
 ///
@@ -132,7 +130,14 @@ impl ScreenshotTool {
                     });
                 }
 
-                Self::read_and_encode(&output_path).await
+                Ok(ToolResult {
+                    success: true,
+                    output: format!(
+                        "Screenshot saved to: {}",
+                        output_path.display(),
+                    ),
+                    error: None,
+                })
             }
             Ok(Err(e)) => Ok(ToolResult {
                 success: false,
@@ -148,60 +153,6 @@ impl ScreenshotTool {
             }),
         }
     }
-
-    /// Read the screenshot file and return base64-encoded result.
-    async fn read_and_encode(output_path: &std::path::Path) -> anyhow::Result<ToolResult> {
-        // Check file size before reading to prevent OOM on large screenshots
-        const MAX_RAW_BYTES: u64 = 1_572_864; // ~1.5 MB (base64 expands ~33%)
-        if let Ok(meta) = tokio::fs::metadata(output_path).await {
-            if meta.len() > MAX_RAW_BYTES {
-                return Ok(ToolResult {
-                    success: true,
-                    output: format!(
-                        "Screenshot saved to: {}\nSize: {} bytes (too large to base64-encode inline)",
-                        output_path.display(),
-                        meta.len(),
-                    ),
-                    error: None,
-                });
-            }
-        }
-
-        match tokio::fs::read(output_path).await {
-            Ok(bytes) => {
-                use base64::Engine;
-                let size = bytes.len();
-                let mut encoded = base64::engine::general_purpose::STANDARD.encode(&bytes);
-                let truncated = if encoded.len() > MAX_BASE64_BYTES {
-                    let mut boundary = MAX_BASE64_BYTES.min(encoded.len());
-                    while boundary > 0 && !encoded.is_char_boundary(boundary) {
-                        boundary -= 1;
-                    }
-                    encoded.truncate(boundary);
-                    true
-                } else {
-                    false
-                };
-
-                let mut output_msg = format!(
-                    "Screenshot saved to: {}\nSize: {size} bytes\n[IMAGE:{}]",
-                    output_path.display(),
-                    output_path.display(),
-                );
-
-                Ok(ToolResult {
-                    success: true,
-                    output: output_msg,
-                    error: None,
-                })
-            }
-            Err(e) => Ok(ToolResult {
-                success: false,
-                output: format!("Screenshot saved to: {}", output_path.display()),
-                error: Some(format!("Failed to read screenshot file: {e}")),
-            }),
-        }
-    }
 }
 
 #[async_trait]
@@ -211,11 +162,11 @@ impl Tool for ScreenshotTool {
     }
 
     fn description(&self) -> &str {
-        "Capture a screenshot of the current screen. Returns the file path and base64-encoded PNG data."
+        "Capture a screenshot of the current screen. Returns the file path."
     }
 
     fn description_zh(&self) -> &str {
-        "截取当前屏幕。返回文件路径和以 base64 编码的 PNG 数据。"
+        "截取当前屏幕。返回文件路径。"
     }
 
     fn parameters_schema(&self) -> serde_json::Value {

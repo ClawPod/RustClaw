@@ -887,6 +887,9 @@ pub struct MultimodalConfig {
     /// Allow fetching remote image URLs (http/https). Disabled by default.
     #[serde(default)]
     pub allow_remote_fetch: bool,
+    /// Optional base URL to expose local uploads or workspace files as public URLs.
+    #[serde(default)]
+    pub public_base_url: Option<String>,
 }
 
 fn default_multimodal_max_images() -> usize {
@@ -912,6 +915,7 @@ impl Default for MultimodalConfig {
             max_images: default_multimodal_max_images(),
             max_image_size_mb: default_multimodal_max_image_size_mb(),
             allow_remote_fetch: false,
+            public_base_url: None,
         }
     }
 }
