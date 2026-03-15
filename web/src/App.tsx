@@ -73,11 +73,11 @@ function PairingDialog({ onPair }: { onPair: (code: string) => Promise<void> }) 
         <div className="text-center mb-8">
           <img
             src="/_app/logo.png"
-            alt="ZeroClaw"
+            alt="RustClaw"
             className="h-20 w-20 rounded-2xl object-cover mx-auto mb-4 animate-float"
             style={{ boxShadow: '0 0 30px var(--glow-blue)' }}
           />
-          <h1 className="text-2xl font-bold text-gradient-blue mb-2">ZeroClaw</h1>
+          <h1 className="text-2xl font-bold text-gradient-blue mb-2">RustClaw</h1>
           <p className="text-text-muted text-sm">Enter the pairing code from your terminal</p>
         </div>
         <form onSubmit={handleSubmit}>

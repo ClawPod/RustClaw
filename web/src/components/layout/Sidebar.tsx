@@ -36,11 +36,11 @@ export default function Sidebar() {
       <div className="flex items-center gap-3 px-4 py-4 border-b border-border-default/50">
         <img
           src="/_app/logo.png"
-          alt="ZeroClaw"
+          alt="RustClaw"
           className="h-10 w-10 rounded-xl object-cover animate-pulse-glow"
         />
         <span className="text-lg font-bold text-gradient-blue tracking-wide">
-          ZeroClaw
+          RustClaw
         </span>
       </div>
 
@@ -79,7 +79,7 @@ export default function Sidebar() {
 
       {/* Footer */}
       <div className="px-5 py-4 border-t border-border-default/50">
-        <p className="text-[10px] text-text-muted tracking-wider uppercase">ZeroClaw Runtime</p>
+        <p className="text-[10px] text-text-muted tracking-wider uppercase">RustClaw Runtime</p>
       </div>
     </aside>
   );
