@@ -12,12 +12,12 @@ from langgraph.graph import StateGraph, MessagesState, END
 from langgraph.prebuilt import ToolNode
 
 
-SYSTEM_PROMPT = """You are ZeroClaw, an AI assistant with tool access. Use tools to accomplish tasks.
+SYSTEM_PROMPT = """You are RustClaw, an AI assistant with tool access. Use tools to accomplish tasks.
 Be concise and helpful. Execute tools directly when needed without excessive explanation."""
 GLM_DEFAULT_BASE_URL = "https://api.z.ai/api/coding/paas/v4"
 
 
-class ZeroclawAgent:
+class RustClawAgent:
     """
     LangGraph-based agent with consistent tool calling behavior.
 
@@ -115,8 +115,8 @@ class ZeroclawAgent:
             return asyncio.run(self.ainvoke(input, config))
 
         raise RuntimeError(
-            "ZeroclawAgent.invoke() cannot be called inside an active event loop. "
-            "Use 'await ZeroclawAgent.ainvoke(...)' instead."
+            "RustClawAgent.invoke() cannot be called inside an active event loop. "
+            "Use 'await RustClawAgent.ainvoke(...)' instead."
         )
 
 
@@ -127,9 +127,9 @@ def create_agent(
     base_url: Optional[str] = None,
     temperature: float = 0.7,
     system_prompt: Optional[str] = None,
-) -> ZeroclawAgent:
+) -> RustClawAgent:
     """
-    Create a ZeroClaw agent with LangGraph-based tool calling.
+    Create a RustClaw agent with LangGraph-based tool calling.
 
     Args:
         tools: List of tools. Defaults to shell, file_read, file_write.
@@ -140,7 +140,7 @@ def create_agent(
         system_prompt: Custom system prompt
 
     Returns:
-        Configured ZeroclawAgent instance
+        Configured RustClawAgent instance
 
     Example:
         ```python
@@ -163,7 +163,7 @@ def create_agent(
 
         tools = [shell, file_read, file_write]
 
-    return ZeroclawAgent(
+    return RustClawAgent(
         tools=tools,
         model=model,
         api_key=api_key,

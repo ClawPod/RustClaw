@@ -88,7 +88,7 @@ pub fn parse_image_markers(content: &str) -> (String, Vec<String>) {
 pub fn count_image_markers(messages: &[ChatMessage]) -> usize {
     messages
         .iter()
-        .filter(|m| m.role == "user")
+        .filter(|m| m.role == "user" || m.role == "tool")
         .map(|m| parse_image_markers(&m.content).1.len())
         .sum()
 }
@@ -139,7 +139,8 @@ pub async fn prepare_messages_for_provider(
 
     let mut normalized_messages = Vec::with_capacity(messages.len());
     for message in messages {
-        if message.role != "user" {
+        // Handle images in both user and tool messages
+        if message.role != "user" && message.role != "tool" {
             normalized_messages.push(message.clone());
             continue;
         }

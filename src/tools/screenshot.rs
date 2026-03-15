@@ -184,21 +184,10 @@ impl ScreenshotTool {
                 };
 
                 let mut output_msg = format!(
-                    "Screenshot saved to: {}\nSize: {size} bytes\nBase64 length: {}",
+                    "Screenshot saved to: {}\nSize: {size} bytes\n[IMAGE:{}]",
                     output_path.display(),
-                    encoded.len(),
+                    output_path.display(),
                 );
-                if truncated {
-                    output_msg.push_str(" (truncated)");
-                }
-                let mime = match output_path.extension().and_then(|e| e.to_str()) {
-                    Some("jpg" | "jpeg") => "image/jpeg",
-                    Some("bmp") => "image/bmp",
-                    Some("gif") => "image/gif",
-                    Some("webp") => "image/webp",
-                    _ => "image/png",
-                };
-                let _ = write!(output_msg, "\ndata:{mime};base64,{encoded}");
 
                 Ok(ToolResult {
                     success: true,

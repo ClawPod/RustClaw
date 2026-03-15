@@ -260,10 +260,10 @@ fn runtime_config_store() -> &'static Mutex<HashMap<PathBuf, RuntimeConfigState>
     STORE.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-const SYSTEMD_STATUS_ARGS: [&str; 3] = ["--user", "is-active", "zeroclaw.service"];
-const SYSTEMD_RESTART_ARGS: [&str; 3] = ["--user", "restart", "zeroclaw.service"];
-const OPENRC_STATUS_ARGS: [&str; 2] = ["zeroclaw", "status"];
-const OPENRC_RESTART_ARGS: [&str; 2] = ["zeroclaw", "restart"];
+const SYSTEMD_STATUS_ARGS: [&str; 3] = ["--user", "is-active", "rustclaw.service"];
+const SYSTEMD_RESTART_ARGS: [&str; 3] = ["--user", "restart", "rustclaw.service"];
+const OPENRC_STATUS_ARGS: [&str; 2] = ["rustclaw", "status"];
+const OPENRC_RESTART_ARGS: [&str; 2] = ["rustclaw", "restart"];
 
 #[derive(Clone, Copy)]
 struct InterruptOnNewMessageConfig {
@@ -520,6 +520,10 @@ fn build_channel_system_prompt(
     reply_target: &str,
 ) -> String {
     let mut prompt = base_prompt.to_string();
+
+    if prompt.is_empty() {
+        prompt = "You are RustClaw, a fast and efficient AI assistant built in Rust. Be helpful, concise, and direct.".to_string();
+    }
 
     // Refresh the stale datetime in the cached system prompt
     {
@@ -2698,7 +2702,7 @@ pub fn build_system_prompt_with_mode(
     prompt.push_str("- If a tool output contains credentials, they have already been redacted — do not mention them.\n\n");
 
     if prompt.is_empty() {
-        "You are ZeroClaw, a fast and efficient AI assistant built in Rust. Be helpful, concise, and direct."
+        "You are RustClaw, a fast and efficient AI assistant built in Rust. Be helpful, concise, and direct."
             .to_string()
     } else {
         prompt

@@ -97,7 +97,7 @@ fn default_true() -> bool {
     true
 }
 fn default_subject() -> String {
-    "ZeroClaw Message".into()
+    "RustClaw Message".into()
 }
 
 impl Default for EmailConfig {

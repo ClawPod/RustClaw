@@ -1,5 +1,5 @@
-# ZeroClaw Robot Kit Configuration
-# Copy to ~/.zeroclaw/robot.toml
+# RustClaw Robot Kit Configuration
+# Copy to ~/.rustclaw/robot.toml
 
 # =============================================================================
 # DRIVE SYSTEM

@@ -1,6 +1,6 @@
 # Raspberry Pi 5 Robot Setup Guide
 
-Complete guide to setting up a ZeroClaw-powered robot on Raspberry Pi 5.
+Complete guide to setting up a RustClaw-powered robot on Raspberry Pi 5.
 
 ## Hardware Requirements
 
@@ -167,7 +167,7 @@ sudo usermod -aG dialout $USER
 # Logout and login for group change to take effect
 ```
 
-### 7. Build ZeroClaw Robot Kit
+### 7. Build RustClaw Robot Kit
 
 ```bash
 # Clone repo (or copy from USB)
@@ -354,10 +354,10 @@ chmod +x ~/sensor_loop.py
 nohup python3 ~/sensor_loop.py &
 ```
 
-### Start ZeroClaw Agent
+### Start RustClaw Agent
 
 ```bash
-# Configure ZeroClaw to use robot tools
+# Configure RustClaw to use robot tools
 cat > ~/.zeroclaw/config.toml << 'EOF'
 api_key = ""  # Not needed for local Ollama
 default_provider = "ollama"
@@ -422,7 +422,7 @@ wait
 # /etc/systemd/system/zeroclaw-robot.service
 sudo tee /etc/systemd/system/zeroclaw-robot.service << 'EOF'
 [Unit]
-Description=ZeroClaw Robot
+Description=RustClaw Robot
 After=network.target ollama.service
 
 [Service]
