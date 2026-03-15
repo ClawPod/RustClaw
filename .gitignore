@@ -44,3 +44,5 @@ lcov.info
 
 # IDE's stuff
 .idea
+volce-api.md
+config.toml.bigmodel.back
