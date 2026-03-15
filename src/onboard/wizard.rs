@@ -1103,6 +1103,24 @@ fn curated_models_for_provider(provider_name: &str) -> Vec<(String, String)> {
                 "Phi-4 Mini Reasoning (local, fast reasoning)".to_string(),
             ),
         ],
+        "doubao" | "volcengine" | "ark" => vec![
+            (
+                "glm-4-7-251222".to_string(),
+                "GLM-4-7 via Volcengine Ark (latest GLM model)".to_string(),
+            ),
+            (
+                "doubao-pro-128k".to_string(),
+                "Doubao Pro 128K (high-context flagship)".to_string(),
+            ),
+            (
+                "doubao-pro-4k".to_string(),
+                "Doubao Pro 4K (balanced flagship)".to_string(),
+            ),
+            (
+                "doubao-lite-128k".to_string(),
+                "Doubao Lite 128K (fast, local)".to_string(),
+            ),
+        ],
         "bedrock" => vec![
             (
                 "anthropic.claude-sonnet-4-6".to_string(),
