@@ -178,17 +178,33 @@ impl OpenAiProvider {
         }
     }
 
-    fn convert_tools(tools: Option<&[ToolSpec]>) -> Option<Vec<NativeToolSpec>> {
+    fn convert_tools(
+        tools: Option<&[ToolSpec]>,
+        locale: Option<&str>,
+    ) -> Option<Vec<NativeToolSpec>> {
         tools.map(|items| {
             items
                 .iter()
-                .map(|tool| NativeToolSpec {
-                    kind: "function".to_string(),
-                    function: NativeToolFunctionSpec {
-                        name: tool.name.clone(),
-                        description: tool.description.clone(),
-                        parameters: tool.parameters.clone(),
-                    },
+                .map(|tool| {
+                    let description = if let Some(loc) = locale {
+                        match loc {
+                            "zh" | "zh-CN" | "zh-HK" | "zh-TW" => {
+                                tool.description_zh.as_deref().unwrap_or(&tool.description)
+                            }
+                            _ => &tool.description,
+                        }
+                    } else {
+                        &tool.description
+                    };
+
+                    NativeToolSpec {
+                        kind: "function".to_string(),
+                        function: NativeToolFunctionSpec {
+                            name: tool.name.clone(),
+                            description: description.to_string(),
+                            parameters: tool.parameters.clone(),
+                        },
+                    }
                 })
                 .collect()
         })
@@ -360,7 +376,7 @@ impl Provider for OpenAiProvider {
             anyhow::anyhow!("OpenAI API key not set. Set OPENAI_API_KEY or edit config.toml.")
         })?;
 
-        let tools = Self::convert_tools(request.tools);
+        let tools = Self::convert_tools(request.tools, request.locale);
         let native_request = NativeChatRequest {
             model: model.to_string(),
             messages: Self::convert_messages(request.messages),

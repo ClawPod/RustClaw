@@ -134,6 +134,11 @@ impl Tool for DelegateTool {
          prompt by default; with agentic=true it can iterate with a filtered tool-call loop."
     }
 
+    fn description_zh(&self) -> &str {
+        "将子任务委托给专业代理。适用于：任务受益于不同模型的情形（例如：快速摘要、深度推理、代码生成）。\
+         默认情况下，子代理运行单个提示词；若设置 agentic=true，它可以进行过滤后的工具调用循环迭代。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         let agent_names: Vec<&str> = self.agents.keys().map(|s: &String| s.as_str()).collect();
         json!({
@@ -411,6 +416,7 @@ impl DelegateTool {
                 &agent_config.provider,
                 &agent_config.model,
                 temperature,
+                "", // Default locale for sub-agent loop
                 true,
                 None,
                 "delegate",

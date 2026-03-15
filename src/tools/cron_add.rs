@@ -61,6 +61,14 @@ impl Tool for CronAddTool {
          This is the preferred tool for sending scheduled/delayed messages to users via channels."
     }
 
+    fn description_zh(&self) -> &str {
+        "使用 cron/at/every 计划任务创建定时 cron 作业（shell 或 agent）。\
+         使用 job_type='agent' 及 prompt 按计划运行 AI 代理。\
+         若要将输出传递给频道（Discord、Telegram、Slack、Mattermost、Matrix），请设置 \
+         delivery={\"mode\":\"announce\",\"channel\":\"discord\",\"to\":\"<channel_id_or_chat_id>\"}。\
+         这是通过频道向用户发送定时/延迟消息的首选工具。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

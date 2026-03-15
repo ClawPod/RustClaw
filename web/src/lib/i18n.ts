@@ -543,7 +543,7 @@ const translations: Record<Locale, Record<string, string>> = {
 // Current locale state
 // ---------------------------------------------------------------------------
 
-let currentLocale: Locale = 'zh';
+let currentLocale: Locale = (localStorage.getItem('zeroclaw-locale') as Locale) || 'zh';
 
 export function getLocale(): Locale {
   return currentLocale;
@@ -551,6 +551,9 @@ export function getLocale(): Locale {
 
 export function setLocale(locale: Locale): void {
   currentLocale = locale;
+  localStorage.setItem('zeroclaw-locale', locale);
+  // Dispatch a custom event to notify all useLocale hooks
+  window.dispatchEvent(new CustomEvent('zeroclaw-locale-change', { detail: locale }));
 }
 
 // ---------------------------------------------------------------------------
@@ -585,8 +588,34 @@ export function useLocale(): { locale: Locale; t: (key: string) => string } {
   const [locale, setLocaleState] = useState<Locale>(currentLocale);
 
   useEffect(() => {
-    let cancelled = false;
+    // 1. Listen for manual locale changes within the same tab
+    const handleLocaleChange = (e: Event) => {
+      const newLocale = (e as CustomEvent).detail;
+      setLocaleState(newLocale);
+    };
 
+    // 2. Listen for locale changes from other tabs via localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'zeroclaw-locale' && e.newValue) {
+        const newLocale = e.newValue as Locale;
+        currentLocale = newLocale;
+        setLocaleState(newLocale);
+      }
+    };
+
+    window.addEventListener('zeroclaw-locale-change', handleLocaleChange);
+    window.addEventListener('storage', handleStorageChange);
+
+    // 3. Only fetch from API if we haven't manually set a locale yet
+    const hasManualLocale = localStorage.getItem('zeroclaw-locale');
+    if (hasManualLocale) {
+      return () => {
+        window.removeEventListener('zeroclaw-locale-change', handleLocaleChange);
+        window.removeEventListener('storage', handleStorageChange);
+      };
+    }
+
+    let cancelled = false;
     getStatus()
       .then((status) => {
         if (cancelled) return;
@@ -597,15 +626,20 @@ export function useLocale(): { locale: Locale; t: (key: string) => string } {
           detected = 'en';
         }
 
-        setLocale(detected);
-        setLocaleState(detected);
+        // Only sync if still using auto-detected default
+        if (!localStorage.getItem('zeroclaw-locale')) {
+          setLocale(detected);
+          setLocaleState(detected);
+        }
       })
       .catch(() => {
-        // Keep default locale on error
+        // Keep current default
       });
 
     return () => {
       cancelled = true;
+      window.removeEventListener('zeroclaw-locale-change', handleLocaleChange);
+      window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
 

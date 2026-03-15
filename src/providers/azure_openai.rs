@@ -189,17 +189,33 @@ impl AzureOpenAiProvider {
         )
     }
 
-    fn convert_tools(tools: Option<&[ToolSpec]>) -> Option<Vec<NativeToolSpec>> {
+    fn convert_tools(
+        tools: Option<&[ToolSpec]>,
+        locale: Option<&str>,
+    ) -> Option<Vec<NativeToolSpec>> {
         tools.map(|items| {
             items
                 .iter()
-                .map(|tool| NativeToolSpec {
-                    kind: "function".to_string(),
-                    function: NativeToolFunctionSpec {
-                        name: tool.name.clone(),
-                        description: tool.description.clone(),
-                        parameters: tool.parameters.clone(),
-                    },
+                .map(|tool| {
+                    let description = if let Some(loc) = locale {
+                        match loc {
+                            "zh" | "zh-CN" | "zh-HK" | "zh-TW" => {
+                                tool.description_zh.as_deref().unwrap_or(&tool.description)
+                            }
+                            _ => &tool.description,
+                        }
+                    } else {
+                        &tool.description
+                    };
+
+                    NativeToolSpec {
+                        kind: "function".to_string(),
+                        function: NativeToolFunctionSpec {
+                            name: tool.name.clone(),
+                            description: description.to_string(),
+                            parameters: tool.parameters.clone(),
+                        },
+                    }
                 })
                 .collect()
         })
@@ -315,16 +331,27 @@ impl Provider for AzureOpenAiProvider {
         }
     }
 
-    fn convert_tools(&self, tools: &[ToolSpec]) -> ToolsPayload {
+    fn convert_tools(&self, tools: &[ToolSpec], locale: Option<&str>) -> ToolsPayload {
         ToolsPayload::OpenAI {
             tools: tools
                 .iter()
                 .map(|tool| {
+                    let description = if let Some(loc) = locale {
+                        match loc {
+                            "zh" | "zh-CN" | "zh-HK" | "zh-TW" => {
+                                tool.description_zh.as_deref().unwrap_or(&tool.description)
+                            }
+                            _ => &tool.description,
+                        }
+                    } else {
+                        &tool.description
+                    };
+
                     serde_json::json!({
                         "type": "function",
                         "function": {
                             "name": tool.name,
-                            "description": tool.description,
+                            "description": description,
                             "parameters": tool.parameters,
                         }
                     })
@@ -407,7 +434,7 @@ impl Provider for AzureOpenAiProvider {
             )
         })?;
 
-        let tools = Self::convert_tools(request.tools);
+        let tools = Self::convert_tools(request.tools, request.locale);
         let native_request = NativeChatRequest {
             messages: Self::convert_messages(request.messages),
             temperature,

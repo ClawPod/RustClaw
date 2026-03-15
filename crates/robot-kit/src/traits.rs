@@ -54,6 +54,9 @@ pub struct ToolSpec {
     pub name: String,
     /// Human-readable description
     pub description: String,
+    /// Chinese description (optional)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description_zh: Option<String>,
     /// JSON Schema for parameters
     pub parameters: Value,
 }
@@ -102,6 +105,11 @@ pub trait Tool: Send + Sync {
     /// Human-readable description of what this tool does
     fn description(&self) -> &str;
 
+    /// Chinese description (optional)
+    fn description_zh(&self) -> &str {
+        ""
+    }
+
     /// JSON Schema describing the tool's parameters
     ///
     /// This is used by the LLM to understand how to call the tool.
@@ -114,9 +122,15 @@ pub trait Tool: Send + Sync {
 
     /// Get the full specification for LLM registration
     fn spec(&self) -> ToolSpec {
+        let zh = self.description_zh();
         ToolSpec {
             name: self.name().to_string(),
             description: self.description().to_string(),
+            description_zh: if zh.is_empty() {
+                None
+            } else {
+                Some(zh.to_string())
+            },
             parameters: self.parameters_schema(),
         }
     }

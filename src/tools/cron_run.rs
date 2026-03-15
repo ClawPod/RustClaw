@@ -28,6 +28,10 @@ impl Tool for CronRunTool {
         "Force-run a cron job immediately and record run history"
     }
 
+    fn description_zh(&self) -> &str {
+        "立即强制运行 cron 作业并记录运行历史"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

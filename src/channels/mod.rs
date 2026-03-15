@@ -2015,6 +2015,7 @@ async fn process_channel_message(
                 route.provider.as_str(),
                 route.model.as_str(),
                 runtime_defaults.temperature,
+                "",
                 true,
                 None,
                 msg.channel.as_str(),

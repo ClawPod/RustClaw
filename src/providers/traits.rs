@@ -89,6 +89,7 @@ impl ChatResponse {
 pub struct ChatRequest<'a> {
     pub messages: &'a [ChatMessage],
     pub tools: Option<&'a [ToolSpec]>,
+    pub locale: Option<&'a str>,
 }
 
 /// A tool result to feed back to the LLM.
@@ -270,9 +271,9 @@ pub trait Provider: Send + Sync {
     /// tool documentation into the system prompt as text. Providers with
     /// native tool calling support should override this to return their
     /// specific format (Gemini, Anthropic, OpenAI).
-    fn convert_tools(&self, tools: &[ToolSpec]) -> ToolsPayload {
+    fn convert_tools(&self, tools: &[ToolSpec], locale: Option<&str>) -> ToolsPayload {
         ToolsPayload::PromptGuided {
-            instructions: build_tool_instructions_text(tools),
+            instructions: build_tool_instructions_text(tools, locale),
         }
     }
 
@@ -332,7 +333,7 @@ pub trait Provider: Send + Sync {
         // inject tool instructions into system prompt as fallback.
         if let Some(tools) = request.tools {
             if !tools.is_empty() && !self.supports_native_tools() {
-                let tool_instructions = match self.convert_tools(tools) {
+                let tool_instructions = match self.convert_tools(tools, request.locale) {
                     ToolsPayload::PromptGuided { instructions } => instructions,
                     payload => {
                         anyhow::bail!(
@@ -458,27 +459,77 @@ pub trait Provider: Send + Sync {
 /// Generates a formatted text block describing available tools and how to
 /// invoke them using XML-style tags. This is used as a fallback when the
 /// provider doesn't support native tool calling.
-pub fn build_tool_instructions_text(tools: &[ToolSpec]) -> String {
+pub fn build_tool_instructions_text(tools: &[ToolSpec], locale: Option<&str>) -> String {
     let mut instructions = String::new();
 
-    instructions.push_str("## Tool Use Protocol\n\n");
-    instructions.push_str("To use a tool, wrap a JSON object in <tool_call></tool_call> tags:\n\n");
+    let (title, prompt, example_name, example_param, example_val, multiple, execution, reasoning, available) =
+        match locale {
+            Some("zh") | Some("zh-CN") | Some("zh-HK") | Some("zh-TW") => (
+                "## 工具使用协议",
+                "要使用工具，请将 JSON 对象封装在 <tool_call></tool_call> 标签中：",
+                "工具名称",
+                "参数名",
+                "参数值",
+                "您可以在单个响应中使用多个工具调用。",
+                "工具执行后，结果将出现在 <tool_result> 标签中。",
+                "继续根据结果进行推理，直到您可以给出最终答案。",
+                "### 可用工具"
+            ),
+            _ => (
+                "## Tool Use Protocol",
+                "To use a tool, wrap a JSON object in <tool_call></tool_call> tags:",
+                "tool_name",
+                "param",
+                "value",
+                "You may use multiple tool calls in a single response.",
+                "After tool execution, results appear in <tool_result> tags.",
+                "Continue reasoning with the results until you can give a final answer.",
+                "### Available Tools"
+            ),
+        };
+
+    instructions.push_str(title);
+    instructions.push_str("\n\n");
+    instructions.push_str(prompt);
+    instructions.push_str("\n\n");
     instructions.push_str("<tool_call>\n");
-    instructions.push_str(r#"{"name": "tool_name", "arguments": {"param": "value"}}"#);
+    instructions.push_str(&format!(
+        "{{\"name\": \"{}\", \"arguments\": {{\"{}\": \"{}\"}}}}",
+        example_name, example_param, example_val
+    ));
     instructions.push_str("\n</tool_call>\n\n");
-    instructions.push_str("You may use multiple tool calls in a single response. ");
-    instructions.push_str("After tool execution, results appear in <tool_result> tags. ");
-    instructions
-        .push_str("Continue reasoning with the results until you can give a final answer.\n\n");
-    instructions.push_str("### Available Tools\n\n");
+    instructions.push_str(multiple);
+    instructions.push_str(" ");
+    instructions.push_str(execution);
+    instructions.push_str(" ");
+    instructions.push_str(reasoning);
+    instructions.push_str("\n\n");
+    instructions.push_str(available);
+    instructions.push_str("\n\n");
 
     for tool in tools {
-        writeln!(&mut instructions, "**{}**: {}", tool.name, tool.description)
+        let description = if let Some(loc) = locale {
+            match loc {
+                "zh" | "zh-CN" | "zh-HK" | "zh-TW" => {
+                    tool.description_zh.as_deref().unwrap_or(&tool.description)
+                }
+                _ => &tool.description,
+            }
+        } else {
+            &tool.description
+        };
+
+        writeln!(&mut instructions, "**{}**: {}", tool.name, description)
             .expect("writing to String cannot fail");
 
         let parameters =
             serde_json::to_string(&tool.parameters).unwrap_or_else(|_| "{}".to_string());
-        writeln!(&mut instructions, "Parameters: `{parameters}`")
+        let param_label = if let Some("zh") | Some("zh-CN") | Some("zh-HK") | Some("zh-TW") = locale {
+            "参数"
+        } else {
+            "Parameters"
+        };
+        writeln!(&mut instructions, "{}: `{parameters}`", param_label)
             .expect("writing to String cannot fail");
         instructions.push('\n');
     }
@@ -751,10 +802,11 @@ mod tests {
         let tools = vec![ToolSpec {
             name: "test_tool".to_string(),
             description: "A test tool".to_string(),
+            description_zh: None,
             parameters: serde_json::json!({"type": "object"}),
         }];
 
-        let payload = provider.convert_tools(&tools);
+        let payload = provider.convert_tools(&tools, None);
 
         // Default implementation should return PromptGuided.
         assert!(matches!(payload, ToolsPayload::PromptGuided { .. }));
@@ -774,12 +826,14 @@ mod tests {
         let tools = vec![ToolSpec {
             name: "shell".to_string(),
             description: "Run commands".to_string(),
+            description_zh: None,
             parameters: serde_json::json!({"type": "object"}),
         }];
 
         let request = ChatRequest {
             messages: &[ChatMessage::user("Hello")],
             tools: Some(&tools),
+            locale: None,
         };
 
         let response = provider.chat(request, "model", 0.7).await.unwrap();
@@ -797,6 +851,7 @@ mod tests {
         let request = ChatRequest {
             messages: &[ChatMessage::user("Hello")],
             tools: None,
+            locale: None,
         };
 
         let response = provider.chat(request, "model", 0.7).await.unwrap();
@@ -836,7 +891,7 @@ mod tests {
             false
         }
 
-        fn convert_tools(&self, _tools: &[ToolSpec]) -> ToolsPayload {
+        fn convert_tools(&self, _tools: &[ToolSpec], _locale: Option<&str>) -> ToolsPayload {
             ToolsPayload::PromptGuided {
                 instructions: "CUSTOM_TOOL_INSTRUCTIONS".to_string(),
             }
@@ -862,7 +917,7 @@ mod tests {
             false
         }
 
-        fn convert_tools(&self, _tools: &[ToolSpec]) -> ToolsPayload {
+        fn convert_tools(&self, _tools: &[ToolSpec], _locale: Option<&str>) -> ToolsPayload {
             ToolsPayload::OpenAI {
                 tools: vec![serde_json::json!({"type": "function"})],
             }
@@ -888,6 +943,7 @@ mod tests {
         let tools = vec![ToolSpec {
             name: "shell".to_string(),
             description: "Run commands".to_string(),
+            description_zh: None,
             parameters: serde_json::json!({"type": "object"}),
         }];
 
@@ -897,6 +953,7 @@ mod tests {
                 ChatMessage::system("BASE_SYSTEM_PROMPT"),
             ],
             tools: Some(&tools),
+            locale: None,
         };
 
         let response = provider.chat(request, "model", 0.7).await.unwrap();
@@ -913,12 +970,14 @@ mod tests {
         let tools = vec![ToolSpec {
             name: "shell".to_string(),
             description: "Run commands".to_string(),
+            description_zh: None,
             parameters: serde_json::json!({"type": "object"}),
         }];
 
         let request = ChatRequest {
             messages: &[ChatMessage::system("BASE"), ChatMessage::user("Hello")],
             tools: Some(&tools),
+            locale: None,
         };
 
         let response = provider.chat(request, "model", 0.7).await.unwrap();
@@ -935,12 +994,14 @@ mod tests {
         let tools = vec![ToolSpec {
             name: "shell".to_string(),
             description: "Run commands".to_string(),
+            description_zh: None,
             parameters: serde_json::json!({"type": "object"}),
         }];
 
         let request = ChatRequest {
             messages: &[ChatMessage::user("Hello")],
             tools: Some(&tools),
+            locale: None,
         };
 
         let err = provider.chat(request, "model", 0.7).await.unwrap_err();

@@ -26,6 +26,10 @@ impl Tool for MemoryRecallTool {
         "Search long-term memory for relevant facts, preferences, or context. Returns scored results ranked by relevance."
     }
 
+    fn description_zh(&self) -> &str {
+        "在长期记忆中搜索相关事实、偏好或上下文。返回按相关性排序的有分值的结果。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

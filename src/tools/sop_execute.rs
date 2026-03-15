@@ -38,6 +38,10 @@ impl Tool for SopExecuteTool {
         "Manually trigger a Standard Operating Procedure (SOP) by name. Returns the run ID and first step instruction. Use sop_list to see available SOPs."
     }
 
+    fn description_zh(&self) -> &str {
+        "按名称手动触发标准作业程序 (SOP)。返回运行 ID 和第一步指令。使用 sop_list 查看可用的 SOP。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

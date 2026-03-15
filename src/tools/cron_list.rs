@@ -25,6 +25,10 @@ impl Tool for CronListTool {
         "List all scheduled cron jobs"
     }
 
+    fn description_zh(&self) -> &str {
+        "列出所有计划中的 cron 作业"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

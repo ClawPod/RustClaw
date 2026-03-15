@@ -94,6 +94,14 @@ impl Tool for WebFetchTool {
          Security: allowlist-only domains, no local/private hosts."
     }
 
+    fn description_zh(&self) -> &str {
+        "获取网页并将其内容作为干净的纯文本返回。\
+         HTML 页面会自动转换为可读文本。\
+         JSON 和纯文本响应将原样返回。\
+         仅支持 GET 请求；遵循重定向。\
+         安全限制：仅限白名单域名，禁止本地/私有主机。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

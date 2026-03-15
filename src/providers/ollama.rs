@@ -840,11 +840,22 @@ impl Provider for OllamaProvider {
                 let tools: Vec<serde_json::Value> = specs
                     .iter()
                     .map(|s| {
+                        let description = if let Some(loc) = request.locale {
+                            match loc {
+                                "zh" | "zh-CN" | "zh-HK" | "zh-TW" => {
+                                    s.description_zh.as_deref().unwrap_or(&s.description)
+                                }
+                                _ => &s.description,
+                            }
+                        } else {
+                            &s.description
+                        };
+
                         serde_json::json!({
                             "type": "function",
                             "function": {
                                 "name": s.name,
-                                "description": s.description,
+                                "description": description,
                                 "parameters": s.parameters
                             }
                         })

@@ -14,6 +14,8 @@ pub struct ToolResult {
 pub struct ToolSpec {
     pub name: String,
     pub description: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description_zh: Option<String>,
     pub parameters: serde_json::Value,
 }
 
@@ -26,6 +28,26 @@ pub trait Tool: Send + Sync {
     /// Human-readable description
     fn description(&self) -> &str;
 
+    /// Chinese description (optional)
+    fn description_zh(&self) -> &str {
+        ""
+    }
+
+    /// Return description for a given locale, falling back to default English.
+    fn description_for_locale(&self, locale: &str) -> &str {
+        match locale {
+            "zh" | "zh-CN" | "zh-HK" | "zh-TW" => {
+                let zh = self.description_zh();
+                if zh.is_empty() {
+                    self.description()
+                } else {
+                    zh
+                }
+            }
+            _ => self.description(),
+        }
+    }
+
     /// JSON schema for parameters
     fn parameters_schema(&self) -> serde_json::Value;
 
@@ -34,9 +56,15 @@ pub trait Tool: Send + Sync {
 
     /// Get the full spec for LLM registration
     fn spec(&self) -> ToolSpec {
+        let zh = self.description_zh();
         ToolSpec {
             name: self.name().to_string(),
             description: self.description().to_string(),
+            description_zh: if zh.is_empty() {
+                None
+            } else {
+                Some(zh.to_string())
+            },
             parameters: self.parameters_schema(),
         }
     }
@@ -56,6 +84,10 @@ mod tests {
 
         fn description(&self) -> &str {
             "A deterministic test tool"
+        }
+
+        fn description_zh(&self) -> &str {
+            "一个确定性的测试工具"
         }
 
         fn parameters_schema(&self) -> serde_json::Value {

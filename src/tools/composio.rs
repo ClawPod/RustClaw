@@ -611,6 +611,16 @@ impl Tool for ComposioTool {
          connected_account_id is auto-resolved when omitted."
     }
 
+    fn description_zh(&self) -> &str {
+        "通过 Composio 在 1000 多个应用（Gmail、Notion、GitHub、Slack 等）上执行操作。\
+         使用 action='list' 查看可用操作（包括参数名称）。\
+         使用 action='execute'、action_name/tool_slug 和 params 来运行操作。\
+         如果你不确定确切的参数，请传入 'text' 及所需操作的自然语言描述（Composio 将通过 NLP 解析正确的参数）。\
+         使用 action='list_accounts' 或 action='connected_accounts' 列出 OAuth 连接的帐户。\
+         使用 action='connect' 和 app/auth_config_id 获取 OAuth URL。\
+         省略时会自动解析 connected_account_id。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

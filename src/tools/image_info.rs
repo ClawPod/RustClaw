@@ -128,6 +128,10 @@ impl Tool for ImageInfoTool {
         "Read image file metadata (format, dimensions, size) and optionally return base64-encoded data."
     }
 
+    fn description_zh(&self) -> &str {
+        "读取图像文件元数据（格式、尺寸、大小），并可选地返回 base64 编码的数据。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

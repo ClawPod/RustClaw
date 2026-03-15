@@ -42,6 +42,11 @@ impl Tool for ToolSearchTool {
          Use \"select:name1,name2\" for exact match or keywords to search."
     }
 
+    fn description_zh(&self) -> &str {
+        "获取延迟加载的 MCP 工具的完整架构定义，以便调用它们。\
+         使用 \"select:name1,name2\" 进行精确匹配，或使用关键字进行搜索。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         serde_json::json!({
             "type": "object",

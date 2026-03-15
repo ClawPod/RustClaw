@@ -29,6 +29,7 @@ export interface ComponentHealth {
 export interface ToolSpec {
   name: string;
   description: string;
+  description_zh?: string;
   parameters: any;
 }
 

@@ -28,6 +28,10 @@ impl Tool for SopListTool {
         "List all loaded Standard Operating Procedures (SOPs) with their triggers, priority, step count, and active run count. Optionally filter by name or priority."
     }
 
+    fn description_zh(&self) -> &str {
+        "列出所有已加载的标准作业程序 (SOP)，包括其触发器、优先级、步骤计数和活动运行计数。可选择按名称或优先级过滤。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

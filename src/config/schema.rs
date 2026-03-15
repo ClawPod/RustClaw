@@ -807,6 +807,9 @@ pub struct AgentConfig {
     /// Default: `[]` (no filtering — all tools included).
     #[serde(default)]
     pub tool_filter_groups: Vec<ToolFilterGroup>,
+    /// Locale for tool descriptions and agent behavior (e.g. "zh-CN", "en-US").
+    #[serde(default)]
+    pub locale: String,
 }
 
 fn default_agent_max_tool_iterations() -> usize {
@@ -831,6 +834,7 @@ impl Default for AgentConfig {
             tool_dispatcher: default_agent_tool_dispatcher(),
             tool_call_dedup_exempt: Vec::new(),
             tool_filter_groups: Vec::new(),
+            locale: String::new(),
         }
     }
 }

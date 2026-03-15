@@ -227,18 +227,34 @@ impl AnthropicProvider {
         }
     }
 
-    fn convert_tools<'a>(tools: Option<&'a [ToolSpec]>) -> Option<Vec<NativeToolSpec<'a>>> {
+    fn convert_tools<'a>(
+        tools: Option<&'a [ToolSpec]>,
+        locale: Option<&str>,
+    ) -> Option<Vec<NativeToolSpec<'a>>> {
         let items = tools?;
         if items.is_empty() {
             return None;
         }
         let mut native_tools: Vec<NativeToolSpec<'a>> = items
             .iter()
-            .map(|tool| NativeToolSpec {
-                name: &tool.name,
-                description: &tool.description,
-                input_schema: &tool.parameters,
-                cache_control: None,
+            .map(|tool| {
+                let description = if let Some(loc) = locale {
+                    match loc {
+                        "zh" | "zh-CN" | "zh-HK" | "zh-TW" => {
+                            tool.description_zh.as_deref().unwrap_or(&tool.description)
+                        }
+                        _ => &tool.description,
+                    }
+                } else {
+                    &tool.description
+                };
+
+                NativeToolSpec {
+                    name: &tool.name,
+                    description,
+                    input_schema: &tool.parameters,
+                    cache_control: None,
+                }
             })
             .collect();
 
@@ -555,13 +571,14 @@ impl Provider for AnthropicProvider {
             Self::apply_cache_to_last_message(&mut messages);
         }
 
+        let tools = Self::convert_tools(request.tools, request.locale);
         let native_request = NativeChatRequest {
             model: model.to_string(),
             max_tokens: 4096,
             system: system_prompt,
             messages,
             temperature,
-            tools: Self::convert_tools(request.tools),
+            tools,
         };
 
         let req = self
@@ -619,6 +636,7 @@ impl Provider for AnthropicProvider {
                         .and_then(|d| d.as_str())
                         .unwrap_or("")
                         .to_string(),
+                    description_zh: None,
                     parameters: func
                         .get("parameters")
                         .cloned()
@@ -634,6 +652,7 @@ impl Provider for AnthropicProvider {
             } else {
                 Some(&tool_specs)
             },
+            locale: None,
         };
         self.chat(request, model, temperature).await
     }

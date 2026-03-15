@@ -202,6 +202,7 @@ pub async fn handle_api_tools(
             serde_json::json!({
                 "name": spec.name,
                 "description": spec.description,
+                "description_zh": spec.description_zh,
                 "parameters": spec.parameters,
             })
         })

@@ -19,6 +19,8 @@ pub struct McpToolWrapper {
     /// Description extracted from the MCP tool definition. Stored as an owned
     /// String so that `description()` can return `&str` with self's lifetime.
     description: String,
+    /// Chinese description extracted from the MCP tool definition.
+    description_zh: String,
     /// JSON schema for the tool's input parameters.
     input_schema: serde_json::Value,
     /// Shared registry — used to dispatch actual tool calls.
@@ -28,9 +30,11 @@ pub struct McpToolWrapper {
 impl McpToolWrapper {
     pub fn new(prefixed_name: String, def: McpToolDef, registry: Arc<McpRegistry>) -> Self {
         let description = def.description.unwrap_or_else(|| "MCP tool".to_string());
+        let description_zh = def.description_zh.unwrap_or_default();
         Self {
             prefixed_name,
             description,
+            description_zh,
             input_schema: def.input_schema,
             registry,
         }
@@ -45,6 +49,10 @@ impl Tool for McpToolWrapper {
 
     fn description(&self) -> &str {
         &self.description
+    }
+
+    fn description_zh(&self) -> &str {
+        &self.description_zh
     }
 
     fn parameters_schema(&self) -> serde_json::Value {

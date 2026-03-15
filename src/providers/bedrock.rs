@@ -803,21 +803,37 @@ impl BedrockProvider {
 
     // ── Tool conversion ─────────────────────────────────────────
 
-    fn convert_tools_to_converse(tools: Option<&[ToolSpec]>) -> Option<ToolConfig> {
+    fn convert_tools_to_converse(
+        tools: Option<&[ToolSpec]>,
+        locale: Option<&str>,
+    ) -> Option<ToolConfig> {
         let items = tools?;
         if items.is_empty() {
             return None;
         }
         let tool_defs: Vec<ToolDefinition> = items
             .iter()
-            .map(|tool| ToolDefinition {
-                tool_spec: ToolSpecDef {
-                    name: tool.name.clone(),
-                    description: tool.description.clone(),
-                    input_schema: InputSchema {
-                        json: tool.parameters.clone(),
+            .map(|tool| {
+                let description = if let Some(loc) = locale {
+                    match loc {
+                        "zh" | "zh-CN" | "zh-HK" | "zh-TW" => {
+                            tool.description_zh.as_deref().unwrap_or(&tool.description)
+                        }
+                        _ => &tool.description,
+                    }
+                } else {
+                    &tool.description
+                };
+
+                ToolDefinition {
+                    tool_spec: ToolSpecDef {
+                        name: tool.name.clone(),
+                        description: description.to_string(),
+                        input_schema: InputSchema {
+                            json: tool.parameters.clone(),
+                        },
                     },
-                },
+                }
             })
             .collect();
         Some(ToolConfig { tools: tool_defs })
@@ -974,14 +990,25 @@ impl Provider for BedrockProvider {
         true
     }
 
-    fn convert_tools(&self, tools: &[ToolSpec]) -> ToolsPayload {
+    fn convert_tools(&self, tools: &[ToolSpec], locale: Option<&str>) -> ToolsPayload {
         let tool_values: Vec<serde_json::Value> = tools
             .iter()
             .map(|t| {
+                let description = if let Some(loc) = locale {
+                    match loc {
+                        "zh" | "zh-CN" | "zh-HK" | "zh-TW" => {
+                            t.description_zh.as_deref().unwrap_or(&t.description)
+                        }
+                        _ => &t.description,
+                    }
+                } else {
+                    &t.description
+                };
+
                 serde_json::json!({
                     "toolSpec": {
                         "name": t.name,
-                        "description": t.description,
+                        "description": description,
                         "inputSchema": { "json": t.parameters }
                     }
                 })
@@ -1067,7 +1094,7 @@ impl Provider for BedrockProvider {
             }
         }
 
-        let tool_config = Self::convert_tools_to_converse(request.tools);
+        let tool_config = Self::convert_tools_to_converse(request.tools, request.locale);
 
         let converse_request = ConverseRequest {
             system,

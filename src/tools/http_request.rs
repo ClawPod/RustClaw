@@ -169,6 +169,11 @@ impl Tool for HttpRequestTool {
         Security constraints: allowlist-only domains, no local/private hosts, configurable timeout and response size limits."
     }
 
+    fn description_zh(&self) -> &str {
+        "向外部 API 发起 HTTP 请求。支持 GET、POST、PUT、DELETE、PATCH、HEAD、OPTIONS 方法。\
+        安全限制：仅限白名单域名，禁止本地/私有主机，可配置超时和响应大小限制。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

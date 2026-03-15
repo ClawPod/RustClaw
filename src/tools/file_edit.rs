@@ -30,6 +30,10 @@ impl Tool for FileEditTool {
         "Edit a file by replacing an exact string match with new content"
     }
 
+    fn description_zh(&self) -> &str {
+        "通过将精确的字符串匹配替换为新内容来编辑文件"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

@@ -28,6 +28,10 @@ impl Tool for MemoryForgetTool {
         "Remove a memory by key. Use to delete outdated facts or sensitive data. Returns whether the memory was found and removed."
     }
 
+    fn description_zh(&self) -> &str {
+        "按键删除记忆。用于删除过时的事实或敏感数据。返回是否找到并删除了该记忆。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

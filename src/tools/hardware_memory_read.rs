@@ -39,6 +39,10 @@ impl Tool for HardwareMemoryReadTool {
         "Read actual memory/register values from Nucleo via USB. Use when: user asks to 'read register values', 'read memory at address', 'dump memory', 'lower memory 0-126', or 'give address and value'. Returns hex dump. Requires Nucleo connected via USB and probe feature. Params: address (hex, e.g. 0x20000000 for RAM start), length (bytes, default 128)."
     }
 
+    fn description_zh(&self) -> &str {
+        "通过 USB 从 Nucleo 读取实际的内存/寄存器值。适用于：用户询问 '读取寄存器值'、'读取指定地址的内存'、'转储内存'、'低位内存 0-126' 或 '给定地址和值' 的情形。返回十六进制转储。需要通过 USB 连接 Nucleo 并启用 probe 功能。参数：address（十六进制，例如 RAM 起始地址 0x20000000），length（字节，默认为 128）。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

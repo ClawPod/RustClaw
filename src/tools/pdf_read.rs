@@ -40,6 +40,12 @@ impl Tool for PdfReadTool {
          Requires the 'rag-pdf' build feature."
     }
 
+    fn description_zh(&self) -> &str {
+        "从工作区中的 PDF 文件提取纯文本。\
+         返回所有可读文本。仅含图像或加密的 PDF 将返回空结果。\
+         需要启用 'rag-pdf' 构建特性。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

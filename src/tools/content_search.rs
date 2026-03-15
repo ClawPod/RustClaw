@@ -44,6 +44,14 @@ impl Tool for ContentSearchTool {
          Example: pattern='fn main', include='*.rs', output_mode='content'."
     }
 
+    fn description_zh(&self) -> &str {
+        "在工作区内按正则表达式模式搜索文件内容。\
+         支持使用 ripgrep (rg)，并回退到 grep。\
+         输出模式：'content'（带有上下文的匹配行）、\
+         'files_with_matches'（仅文件路径）、'count'（每个文件的匹配计数）。\
+         示例：pattern='fn main', include='*.rs', output_mode='content'。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

@@ -25,6 +25,8 @@ pub struct DeferredMcpToolStub {
     pub prefixed_name: String,
     /// Human-readable description (extracted from the MCP tool definition).
     pub description: String,
+    /// Chinese description.
+    pub description_zh: String,
     /// The full tool definition — stored so we can construct a wrapper later.
     def: McpToolDef,
 }
@@ -35,9 +37,11 @@ impl DeferredMcpToolStub {
             .description
             .clone()
             .unwrap_or_else(|| "MCP tool".to_string());
+        let description_zh = def.description_zh.clone().unwrap_or_default();
         Self {
             prefixed_name,
             description,
+            description_zh,
             def,
         }
     }

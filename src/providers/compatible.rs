@@ -958,16 +958,28 @@ impl OpenAiCompatibleProvider {
 
     fn convert_tool_specs(
         tools: Option<&[crate::tools::ToolSpec]>,
+        locale: Option<&str>,
     ) -> Option<Vec<serde_json::Value>> {
         tools.map(|items| {
             items
                 .iter()
                 .map(|tool| {
+                    let description = if let Some(loc) = locale {
+                        match loc {
+                            "zh" | "zh-CN" | "zh-HK" | "zh-TW" => {
+                                tool.description_zh.as_deref().unwrap_or(&tool.description)
+                            }
+                            _ => &tool.description,
+                        }
+                    } else {
+                        &tool.description
+                    };
+
                     serde_json::json!({
                         "type": "function",
                         "function": {
                             "name": tool.name,
-                            "description": tool.description,
+                            "description": description,
                             "parameters": tool.parameters,
                         }
                     })
@@ -1109,7 +1121,7 @@ impl OpenAiCompatibleProvider {
             return messages.to_vec();
         }
 
-        let instructions = crate::providers::traits::build_tool_instructions_text(tools);
+        let instructions = crate::providers::traits::build_tool_instructions_text(tools, None);
         let mut modified_messages = messages.to_vec();
 
         if let Some(system_message) = modified_messages.iter_mut().find(|m| m.role == "system") {
@@ -1557,7 +1569,7 @@ impl Provider for OpenAiCompatibleProvider {
             )
         })?;
 
-        let tools = Self::convert_tool_specs(request.tools);
+        let tools = Self::convert_tool_specs(request.tools, request.locale);
         let effective_messages = if self.merge_system_into_user {
             Self::flatten_system_messages(request.messages)
         } else {

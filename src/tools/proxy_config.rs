@@ -345,6 +345,10 @@ impl Tool for ProxyConfigTool {
         "Manage ZeroClaw proxy settings (scope: environment | zeroclaw | services), including runtime and process env application"
     }
 
+    fn description_zh(&self) -> &str {
+        "管理 ZeroClaw 代理设置（范围：environment | zeroclaw | services），包括运行时和进程环境变量的应用"
+    }
+
     fn parameters_schema(&self) -> Value {
         json!({
             "type": "object",

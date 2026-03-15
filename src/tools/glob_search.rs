@@ -29,6 +29,12 @@ impl Tool for GlobSearchTool {
          Examples: '**/*.rs' (all Rust files), 'src/**/mod.rs' (all mod.rs in src)."
     }
 
+    fn description_zh(&self) -> &str {
+        "在工作区内搜索匹配 glob 模式的文件。\
+         返回相对于工作区根目录的排序后的匹配文件路径列表。\
+         示例：'**/*.rs'（所有 Rust 文件），'src/**/mod.rs'（src 中的所有 mod.rs）。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

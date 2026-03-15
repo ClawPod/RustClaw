@@ -25,6 +25,10 @@ impl Tool for FileWriteTool {
         "Write contents to a file in the workspace"
     }
 
+    fn description_zh(&self) -> &str {
+        "将内容写入工作区中的文件"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

@@ -74,6 +74,10 @@ impl Tool for HardwareBoardInfoTool {
         "Return full board info (chip, architecture, memory map) for connected hardware. Use when: user asks for 'board info', 'what board do I have', 'connected hardware', 'chip info', 'what hardware', or 'memory map'."
     }
 
+    fn description_zh(&self) -> &str {
+        "返回连接硬件的完整板卡信息（芯片、架构、内存映射）。适用于：用户询问 '板卡信息'、'我有什么板卡'、'连接的硬件'、'芯片信息'、'什么硬件' 或 '内存映射' 的情形。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

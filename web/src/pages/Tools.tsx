@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Wrench,
   Search,
@@ -7,11 +7,12 @@ import {
   Terminal,
   Package,
 } from 'lucide-react';
-import { t } from '@/lib/i18n';
+import { useLocale } from '@/lib/i18n';
 import type { ToolSpec, CliTool } from '@/types/api';
 import { getTools, getCliTools } from '@/lib/api';
 
 export default function Tools() {
+  const { locale, t } = useLocale();
   const [tools, setTools] = useState<ToolSpec[]>([]);
   const [cliTools, setCliTools] = useState<CliTool[]>([]);
   const [search, setSearch] = useState('');
@@ -29,17 +30,24 @@ export default function Tools() {
       .finally(() => setLoading(false));
   }, []);
 
-  const filtered = tools.filter(
-    (t) =>
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.description.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filtered = useMemo(() => {
+    const s = search.toLowerCase();
+    return tools.filter((t) => {
+      const nameMatch = t.name.toLowerCase().includes(s);
+      const descMatch = t.description.toLowerCase().includes(s);
+      const descZhMatch = t.description_zh?.toLowerCase().includes(s);
+      return nameMatch || descMatch || descZhMatch;
+    });
+  }, [tools, search]);
 
-  const filteredCli = cliTools.filter(
-    (t) =>
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.category.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filteredCli = useMemo(() => {
+    const s = search.toLowerCase();
+    return cliTools.filter(
+      (t) =>
+        t.name.toLowerCase().includes(s) ||
+        t.category.toLowerCase().includes(s),
+    );
+  }, [cliTools, search]);
 
   if (error) {
     return (
@@ -113,7 +121,9 @@ export default function Tools() {
                       )}
                     </div>
                     <p className="text-sm text-text-secondary mt-2 line-clamp-2">
-                      {tool.description}
+                      {(locale === 'zh' || locale === 'zh-CN') && tool.description_zh
+                        ? tool.description_zh
+                        : tool.description}
                     </p>
                   </button>
 

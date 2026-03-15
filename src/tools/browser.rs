@@ -902,6 +902,15 @@ impl Tool for BrowserTool {
         )
     }
 
+    fn description_zh(&self) -> &str {
+        concat!(
+            "支持可插拔后端（agent-browser、rust-native、computer_use）的网页/浏览器自动化工具。",
+            "支持 DOM 操作，并可通过 computer-use 侧边栏执行可选的操作系统级操作（mouse_move、mouse_click、",
+            "mouse_drag、key_type、key_press、screen_capture）。使用 'snapshot' 将交互元素映射到引用（@e1、@e2）。",
+            "对 open 操作强制执行 browser.allowed_domains 限制。"
+        )
+    }
+
     fn parameters_schema(&self) -> Value {
         json!({
             "type": "object",

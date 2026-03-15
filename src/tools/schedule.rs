@@ -33,6 +33,13 @@ impl Tool for ScheduleTool {
          and a delivery config like {\"mode\":\"announce\",\"channel\":\"discord\",\"to\":\"<channel_id>\"}."
     }
 
+    fn description_zh(&self) -> &str {
+        "管理仅限 shell 的定时任务。操作包括：create/add/once/list/get/cancel/remove/pause/resume。\
+         警告：此工具创建的 shell 作业其输出仅会被记录，而不会传送到任何频道。\
+         若要向 Discord/Telegram/Slack/Matrix 发送定时消息，请使用 cron_add 工具，并将 job_type 设置为 'agent'，\
+         并配置类似 {\"mode\":\"announce\",\"channel\":\"discord\",\"to\":\"<channel_id>\"} 的交付配置。"
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         json!({
             "type": "object",

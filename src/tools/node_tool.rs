@@ -27,6 +27,8 @@ pub struct NodeTool {
     capability_name: String,
     /// Human-readable description.
     description: String,
+    /// Chinese description.
+    description_zh: String,
     /// JSON schema for parameters.
     parameters: serde_json::Value,
     /// Node registry for routing invocations.
@@ -48,6 +50,28 @@ impl NodeTool {
             node_id,
             capability_name,
             description,
+            description_zh: String::new(),
+            parameters,
+            registry,
+        }
+    }
+
+    /// Create a new node tool wrapper with Chinese description.
+    pub fn new_with_zh(
+        node_id: String,
+        capability_name: String,
+        description: String,
+        description_zh: String,
+        parameters: serde_json::Value,
+        registry: Arc<NodeRegistry>,
+    ) -> Self {
+        let prefixed_name = format!("node:{node_id}:{capability_name}");
+        Self {
+            prefixed_name,
+            node_id,
+            capability_name,
+            description,
+            description_zh,
             parameters,
             registry,
         }
@@ -67,6 +91,10 @@ impl Tool for NodeTool {
 
     fn description(&self) -> &str {
         &self.description
+    }
+
+    fn description_zh(&self) -> &str {
+        &self.description_zh
     }
 
     fn parameters_schema(&self) -> serde_json::Value {

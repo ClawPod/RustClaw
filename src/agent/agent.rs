@@ -510,6 +510,7 @@ impl Agent {
                         } else {
                             None
                         },
+                        locale: Some(&self.config.locale),
                     },
                     &effective_model,
                     self.temperature,

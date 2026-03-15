@@ -136,6 +136,10 @@ impl Tool for ArcToolRef {
         self.0.description()
     }
 
+    fn description_zh(&self) -> &str {
+        self.0.description_zh()
+    }
+
     fn parameters_schema(&self) -> serde_json::Value {
         self.0.parameters_schema()
     }
@@ -164,6 +168,10 @@ impl Tool for ArcDelegatingTool {
 
     fn description(&self) -> &str {
         self.inner.description()
+    }
+
+    fn description_zh(&self) -> &str {
+        self.inner.description_zh()
     }
 
     fn parameters_schema(&self) -> serde_json::Value {

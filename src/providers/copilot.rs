@@ -229,21 +229,38 @@ impl CopilotProvider {
         ("Accept", "application/json"),
     ];
 
-    fn convert_tools(tools: Option<&[ToolSpec]>) -> Option<Vec<NativeToolSpec<'_>>> {
+    fn convert_tools<'a>(
+        tools: Option<&'a [ToolSpec]>,
+        locale: Option<&'a str>,
+    ) -> Option<Vec<NativeToolSpec<'a>>> {
         tools.map(|items| {
             items
                 .iter()
-                .map(|tool| NativeToolSpec {
-                    kind: "function",
-                    function: NativeToolFunctionSpec {
-                        name: &tool.name,
-                        description: &tool.description,
-                        parameters: &tool.parameters,
-                    },
+                .map(|tool| {
+                    let description = if let Some(loc) = locale {
+                        match loc {
+                            "zh" | "zh-CN" | "zh-HK" | "zh-TW" => {
+                                tool.description_zh.as_deref().unwrap_or(&tool.description)
+                            }
+                            _ => &tool.description,
+                        }
+                    } else {
+                        &tool.description
+                    };
+
+                    NativeToolSpec {
+                        kind: "function",
+                        function: NativeToolFunctionSpec {
+                            name: &tool.name,
+                            description,
+                            parameters: &tool.parameters,
+                        },
+                    }
                 })
                 .collect()
         })
     }
+
 
     fn convert_messages(messages: &[ChatMessage]) -> Vec<ApiMessage> {
         messages
@@ -318,13 +335,14 @@ impl CopilotProvider {
         &self,
         messages: Vec<ApiMessage>,
         tools: Option<&[ToolSpec]>,
+        locale: Option<&str>,
         model: &str,
         temperature: f64,
     ) -> anyhow::Result<ProviderChatResponse> {
         let (token, endpoint) = self.get_api_key().await?;
         let url = format!("{}/chat/completions", endpoint.trim_end_matches('/'));
 
-        let native_tools = Self::convert_tools(tools);
+        let native_tools = Self::convert_tools(tools, locale);
         let request = ApiChatRequest {
             model: model.to_string(),
             messages,
@@ -622,7 +640,7 @@ impl Provider for CopilotProvider {
         });
 
         let response = self
-            .send_chat_request(messages, None, model, temperature)
+            .send_chat_request(messages, None, None, model, temperature)
             .await?;
         Ok(response.text.unwrap_or_default())
     }
@@ -634,7 +652,7 @@ impl Provider for CopilotProvider {
         temperature: f64,
     ) -> anyhow::Result<String> {
         let response = self
-            .send_chat_request(Self::convert_messages(messages), None, model, temperature)
+            .send_chat_request(Self::convert_messages(messages), None, None, model, temperature)
             .await?;
         Ok(response.text.unwrap_or_default())
     }
@@ -648,6 +666,7 @@ impl Provider for CopilotProvider {
         self.send_chat_request(
             Self::convert_messages(request.messages),
             request.tools,
+            request.locale,
             model,
             temperature,
         )
