@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Send, Bot, User, AlertCircle, Copy, Check } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import type { WsMessage } from '@/types/api';
 import { WebSocketClient } from '@/lib/ws';
 import { generateUUID } from '@/lib/uuid';
@@ -46,7 +47,7 @@ export default function AgentChat() {
     };
 
     ws.onError = () => {
-      setError('Connection error. Attempting to reconnect...');
+      setError(t('agent.error_connection'));
     };
 
     ws.onMessage = (msg: WsMessage) => {
@@ -81,7 +82,7 @@ export default function AgentChat() {
             {
               id: generateUUID(),
               role: 'agent',
-              content: `[Tool Call] ${msg.name ?? 'unknown'}(${JSON.stringify(msg.args ?? {})})`,
+              content: `[${t('agent.tool_call')}] ${msg.name ?? 'unknown'}(${JSON.stringify(msg.args ?? {})})`,
               timestamp: new Date(),
             },
           ]);
@@ -93,7 +94,7 @@ export default function AgentChat() {
             {
               id: generateUUID(),
               role: 'agent',
-              content: `[Tool Result] ${msg.output ?? ''}`,
+              content: `[${t('agent.tool_result')}] ${msg.output ?? ''}`,
               timestamp: new Date(),
             },
           ]);
@@ -105,7 +106,7 @@ export default function AgentChat() {
             {
               id: generateUUID(),
               role: 'agent',
-              content: `[Error] ${msg.message ?? 'Unknown error'}`,
+              content: `[${t('doctor.error')}] ${msg.message ?? 'Unknown error'}`,
               timestamp: new Date(),
             },
           ]);
@@ -146,7 +147,7 @@ export default function AgentChat() {
       setTyping(true);
       pendingContentRef.current = '';
     } catch {
-      setError('Failed to send message. Please try again.');
+      setError(t('agent.error_send'));
     }
 
     setInput('');
@@ -194,8 +195,8 @@ export default function AgentChat() {
             <div className="h-16 w-16 rounded-2xl flex items-center justify-center mb-4 animate-float" style={{ background: 'var(--glow-blue)' }}>
               <Bot className="h-8 w-8 text-accent-blue" />
             </div>
-            <p className="text-lg font-semibold text-text-primary mb-1">ZeroClaw Agent</p>
-            <p className="text-sm text-text-muted">Send a message to start the conversation</p>
+            <p className="text-lg font-semibold text-text-primary mb-1">{t('agent.welcome_title')}</p>
+            <p className="text-sm text-text-muted">{t('agent.welcome_subtitle')}</p>
           </div>
         )}
 
@@ -239,7 +240,7 @@ export default function AgentChat() {
               </div>
               <button
                 onClick={() => handleCopy(msg.id, msg.content)}
-                aria-label="Copy message"
+                aria-label={t('common.copy')}
                 className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-all duration-300 p-1.5 rounded-lg bg-bg-primary border border-border-default text-text-muted hover:text-text-primary hover:border-accent-blue/40"
               >
                 {copiedId === msg.id ? (
@@ -280,7 +281,7 @@ export default function AgentChat() {
               value={input}
               onChange={handleTextareaChange}
               onKeyDown={handleKeyDown}
-              placeholder={connected ? 'Type a message...' : 'Connecting...'}
+              placeholder={connected ? t('agent.placeholder') : t('agent.connecting')}
               disabled={!connected}
               className="input-electric w-full px-4 py-3 text-sm resize-none overflow-y-auto disabled:opacity-40"
               style={{ minHeight: '44px', maxHeight: '200px' }}
@@ -290,6 +291,7 @@ export default function AgentChat() {
             onClick={handleSend}
             disabled={!connected || !input.trim()}
             className="btn-electric flex-shrink-0 p-3 rounded-xl"
+            title={t('agent.send')}
           >
             <Send className="h-5 w-5" />
           </button>
@@ -301,7 +303,7 @@ export default function AgentChat() {
             }`}
           />
           <span className="text-[10px] text-text-muted">
-            {connected ? 'Connected' : 'Disconnected'}
+            {connected ? t('agent.connected') : t('agent.disconnected')}
           </span>
         </div>
       </div>

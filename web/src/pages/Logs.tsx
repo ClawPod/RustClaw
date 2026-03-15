@@ -6,6 +6,7 @@ import {
   ArrowDown,
   Filter,
 } from 'lucide-react';
+import { t } from '@/lib/i18n';
 import type { SSEEvent } from '@/types/api';
 import { SSEClient } from '@/lib/sse';
 
@@ -17,21 +18,21 @@ function formatTimestamp(ts?: string): string {
 function eventTypeBadgeColor(type: string): { classes: string; bg: string } {
   switch (type.toLowerCase()) {
     case 'error':
-      return { classes: 'text-[#ff4466] border-[#ff446630]', bg: 'rgba(255,68,102,0.06)' };
+      return { classes: 'text-status-error border-status-error/30', bg: 'var(--status-error-glow, rgba(255,68,102,0.06))' };
     case 'warn':
     case 'warning':
-      return { classes: 'text-[#ffaa00] border-[#ffaa0030]', bg: 'rgba(255,170,0,0.06)' };
+      return { classes: 'text-status-warning border-status-warning/30', bg: 'var(--status-warning-glow, rgba(255,170,0,0.06))' };
     case 'tool_call':
     case 'tool_result':
       return { classes: 'text-[#a855f7] border-[#a855f730]', bg: 'rgba(168,85,247,0.06)' };
     case 'message':
     case 'chat':
-      return { classes: 'text-[#0080ff] border-[#0080ff30]', bg: 'rgba(0,128,255,0.06)' };
+      return { classes: 'text-accent-blue border-accent-blue/30', bg: 'var(--glow-blue, rgba(0,128,255,0.06))' };
     case 'health':
     case 'status':
-      return { classes: 'text-[#00e68a] border-[#00e68a30]', bg: 'rgba(0,230,138,0.06)' };
+      return { classes: 'text-status-success border-status-success/30', bg: 'var(--status-success-glow, rgba(0,230,138,0.06))' };
     default:
-      return { classes: 'text-[#556080] border-[#1a1a3e]', bg: 'rgba(26,26,62,0.3)' };
+      return { classes: 'text-text-muted border-border-default', bg: 'var(--bg-secondary)' };
   }
 }
 
@@ -133,22 +134,22 @@ export default function Logs() {
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)]">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-[#1a1a3e]/40 animate-fade-in" style={{ background: 'linear-gradient(90deg, rgba(8,8,24,0.9), rgba(5,5,16,0.9))' }}>
+      <div className="flex items-center justify-between px-6 py-3 border-b border-border-default/40 animate-fade-in" style={{ background: 'var(--header-bg)', backdropFilter: 'blur(12px)' }}>
         <div className="flex items-center gap-3">
-          <Activity className="h-5 w-5 text-[#0080ff]" />
-          <h2 className="text-sm font-semibold text-white uppercase tracking-wider">Live Logs</h2>
+          <Activity className="h-5 w-5 text-accent-blue" />
+          <h2 className="text-sm font-semibold text-text-primary uppercase tracking-wider">{t('logs.live_logs')}</h2>
           <div className="flex items-center gap-2 ml-2">
             <span
               className={`inline-block h-1.5 w-1.5 rounded-full glow-dot ${
-                connected ? 'text-[#00e68a] bg-[#00e68a]' : 'text-[#ff4466] bg-[#ff4466]'
+                connected ? 'text-status-success bg-status-success' : 'text-status-error bg-status-error'
               }`}
             />
-            <span className="text-[10px] text-[#334060]">
-              {connected ? 'Connected' : 'Disconnected'}
+            <span className="text-[10px] text-text-muted">
+              {connected ? t('logs.connected') : t('logs.disconnected')}
             </span>
           </div>
-          <span className="text-[10px] text-[#334060] ml-2 font-mono">
-            {filteredEntries.length} events
+          <span className="text-[10px] text-text-muted ml-2 font-mono">
+            {filteredEntries.length} {t('logs.events')}
           </span>
         </div>
 
@@ -158,22 +159,22 @@ export default function Logs() {
             onClick={() => setPaused(!paused)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all duration-300 ${
               paused
-                ? 'text-white shadow-[0_0_15px_rgba(0,230,138,0.2)]'
-                : 'text-white shadow-[0_0_15px_rgba(255,170,0,0.2)]'
+                ? 'text-white shadow-[0_0_15px_var(--status-success-glow)]'
+                : 'text-white shadow-[0_0_15px_var(--status-warning-glow)]'
             }`}
             style={{
               background: paused
-                ? 'linear-gradient(135deg, #00e68a, #00cc7a)'
-                : 'linear-gradient(135deg, #ffaa00, #ee9900)'
+                ? 'linear-gradient(135deg, var(--status-success), var(--status-success))'
+                : 'linear-gradient(135deg, var(--status-warning), var(--status-warning))'
             }}
           >
             {paused ? (
               <>
-                <Play className="h-3.5 w-3.5" /> Resume
+                <Play className="h-3.5 w-3.5" /> {t('logs.resume')}
               </>
             ) : (
               <>
-                <Pause className="h-3.5 w-3.5" /> Pause
+                <Pause className="h-3.5 w-3.5" /> {t('logs.pause')}
               </>
             )}
           </button>
@@ -185,7 +186,7 @@ export default function Logs() {
               className="btn-electric flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold"
             >
               <ArrowDown className="h-3.5 w-3.5" />
-              Jump to bottom
+              {t('logs.jump_to_bottom')}
             </button>
           )}
         </div>
@@ -193,9 +194,9 @@ export default function Logs() {
 
       {/* Event type filters */}
       {allTypes.length > 0 && (
-        <div className="flex items-center gap-2 px-6 py-2 border-b border-[#1a1a3e]/30 overflow-x-auto" style={{ background: 'rgba(5,5,16,0.6)' }}>
-          <Filter className="h-3.5 w-3.5 text-[#334060] flex-shrink-0" />
-          <span className="text-[10px] text-[#334060] flex-shrink-0 uppercase tracking-wider">Filter:</span>
+        <div className="flex items-center gap-2 px-6 py-2 border-b border-border-default/30 overflow-x-auto bg-bg-secondary/30">
+          <Filter className="h-3.5 w-3.5 text-text-muted flex-shrink-0" />
+          <span className="text-[10px] text-text-muted flex-shrink-0 uppercase tracking-wider">{t('logs.filter_by_type')}</span>
           {allTypes.map((type) => (
             <label
               key={type}
@@ -205,17 +206,17 @@ export default function Logs() {
                 type="checkbox"
                 checked={typeFilters.has(type)}
                 onChange={() => toggleTypeFilter(type)}
-                className="rounded bg-[#0a0a18] border-[#1a1a3e] text-[#0080ff] focus:ring-[#0080ff] focus:ring-offset-0 h-3 w-3"
+                className="rounded bg-bg-input border-border-default text-accent-blue focus:ring-accent-blue focus:ring-offset-0 h-3 w-3"
               />
-              <span className="text-[10px] text-[#556080] capitalize">{type}</span>
+              <span className="text-[10px] text-text-secondary capitalize">{type}</span>
             </label>
           ))}
           {typeFilters.size > 0 && (
             <button
               onClick={() => setTypeFilters(new Set())}
-              className="text-[10px] text-[#0080ff] hover:text-[#00d4ff] flex-shrink-0 ml-1 transition-colors"
+              className="text-[10px] text-accent-blue hover:text-accent-blue-hover flex-shrink-0 ml-1 transition-colors"
             >
-              Clear
+              {t('logs.clear_filters')}
             </button>
           )}
         </div>
@@ -228,12 +229,12 @@ export default function Logs() {
         className="flex-1 overflow-y-auto p-4 space-y-1.5"
       >
         {filteredEntries.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-[#334060] animate-fade-in">
-            <Activity className="h-10 w-10 text-[#1a1a3e] mb-3" />
+          <div className="flex flex-col items-center justify-center h-full text-text-muted animate-fade-in">
+            <Activity className="h-10 w-10 text-border-default mb-3" />
             <p className="text-sm">
               {paused
-                ? 'Log streaming is paused.'
-                : 'Waiting for events...'}
+                ? t('logs.paused_message')
+                : t('logs.waiting')}
             </p>
           </div>
         ) : (
@@ -255,10 +256,10 @@ export default function Logs() {
             return (
               <div
                 key={entry.id}
-                className="glass-card rounded-lg p-3 hover:border-[#0080ff20] transition-all duration-200"
+                className="glass-card rounded-lg p-3 hover:border-accent-blue/20 transition-all duration-200"
               >
                 <div className="flex items-start gap-3">
-                  <span className="text-[10px] text-[#334060] font-mono whitespace-nowrap mt-0.5">
+                  <span className="text-[10px] text-text-muted font-mono whitespace-nowrap mt-0.5">
                     {formatTimestamp(event.timestamp)}
                   </span>
                   <span
@@ -267,7 +268,7 @@ export default function Logs() {
                   >
                     {event.type}
                   </span>
-                  <p className="text-sm text-[#8892a8] break-all min-w-0">
+                  <p className="text-sm text-text-secondary break-all min-w-0">
                     {typeof detail === 'string' ? detail : JSON.stringify(detail)}
                   </p>
                 </div>
