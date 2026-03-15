@@ -13,6 +13,19 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      // Proxy the essential gateway routes to the backend
+      "/pair": "http://localhost:42617",
+      "/health": "http://localhost:42617",
+      "/api": "http://localhost:42617",
+      // Proxy WebSockets for chat and nodes
+      "/ws": {
+        target: "ws://localhost:42617",
+        ws: true,
+      },
+    },
+  },
   build: {
     outDir: "dist",
   },
