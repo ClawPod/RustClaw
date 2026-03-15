@@ -26,7 +26,7 @@ export default function Header() {
   const pageTitle = t(titleKey);
 
   const toggleLanguage = () => {
-    setAppLocale(locale === 'en' ? 'tr' : 'en');
+    setAppLocale(locale === 'zh' ? 'en' : 'zh');
   };
 
   return (
@@ -42,7 +42,7 @@ export default function Header() {
           onClick={toggleLanguage}
           className="px-3 py-1 rounded-lg text-xs font-semibold border border-[#1a1a3e] text-[#8892a8] hover:text-white hover:border-[#0080ff40] hover:bg-[#0080ff10] transition-all duration-300"
         >
-          {locale === 'en' ? 'EN' : 'TR'}
+          {locale === 'zh' ? 'ZH' : 'EN'}
         </button>
 
         {/* Logout */}

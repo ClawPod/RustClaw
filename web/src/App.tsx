@@ -22,7 +22,7 @@ interface LocaleContextType {
 }
 
 export const LocaleContext = createContext<LocaleContextType>({
-  locale: 'tr',
+  locale: 'zh',
   setAppLocale: () => {},
 });
 
@@ -99,13 +99,29 @@ function PairingDialog({ onPair }: { onPair: (code: string) => Promise<void> }) 
 
 function AppContent() {
   const { isAuthenticated, requiresPairing, loading, pair, logout } = useAuth();
-  const [locale, setLocaleState] = useState('tr');
+  const [locale, setLocaleState] = useState('zh');
   const draftStore = useDraftStore();
 
   const setAppLocale = (newLocale: string) => {
     setLocaleState(newLocale);
     setLocale(newLocale as Locale);
   };
+
+  // On mount: detect locale from gateway
+  useEffect(() => {
+    import('./lib/api').then(({ getStatus }) => {
+      getStatus().then((status) => {
+        const normalizedLocale = status.locale?.toLowerCase() || '';
+        let detected: Locale = 'zh';
+        if (normalizedLocale.startsWith('en')) {
+          detected = 'en';
+        }
+        setAppLocale(detected);
+      }).catch(() => {
+        // Fallback to zh on error
+      });
+    });
+  }, []);
 
   // Listen for 401 events to force logout
   useEffect(() => {
