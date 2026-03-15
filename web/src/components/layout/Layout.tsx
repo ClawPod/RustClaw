@@ -4,7 +4,7 @@ import Header from '@/components/layout/Header';
 
 export default function Layout() {
   return (
-    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(135deg, #050510 0%, #080818 50%, #050510 100%)' }}>
+    <div className="min-h-screen text-text-primary bg-bg-primary transition-colors duration-300">
       {/* Fixed sidebar */}
       <Sidebar />
 

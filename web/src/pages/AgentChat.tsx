@@ -181,7 +181,7 @@ export default function AgentChat() {
     <div className="flex flex-col h-[calc(100vh-3.5rem)]">
       {/* Connection status bar */}
       {error && (
-        <div className="px-4 py-2 bg-[#ff446615] border-b border-[#ff446630] flex items-center gap-2 text-sm text-[#ff6680] animate-fade-in">
+        <div className="px-4 py-2 bg-status-error/15 border-b border-status-error/30 flex items-center gap-2 text-sm text-status-error animate-fade-in">
           <AlertCircle className="h-4 w-4 flex-shrink-0" />
           {error}
         </div>
@@ -190,12 +190,12 @@ export default function AgentChat() {
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-[#334060] animate-fade-in">
-            <div className="h-16 w-16 rounded-2xl flex items-center justify-center mb-4 animate-float" style={{ background: 'linear-gradient(135deg, #0080ff15, #0080ff08)' }}>
-              <Bot className="h-8 w-8 text-[#0080ff]" />
+          <div className="flex flex-col items-center justify-center h-full text-text-muted animate-fade-in">
+            <div className="h-16 w-16 rounded-2xl flex items-center justify-center mb-4 animate-float" style={{ background: 'var(--glow-blue)' }}>
+              <Bot className="h-8 w-8 text-accent-blue" />
             </div>
-            <p className="text-lg font-semibold text-white mb-1">ZeroClaw Agent</p>
-            <p className="text-sm text-[#556080]">Send a message to start the conversation</p>
+            <p className="text-lg font-semibold text-text-primary mb-1">ZeroClaw Agent</p>
+            <p className="text-sm text-text-muted">Send a message to start the conversation</p>
           </div>
         )}
 
@@ -210,38 +210,28 @@ export default function AgentChat() {
             <div
               className={`flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center ${
                 msg.role === 'user'
-                  ? ''
-                  : ''
+                  ? 'bg-accent-blue'
+                  : 'bg-bg-secondary border border-border-default'
               }`}
-              style={{
-                background: msg.role === 'user'
-                  ? 'linear-gradient(135deg, #0080ff, #0060cc)'
-                  : 'linear-gradient(135deg, #1a1a3e, #12122a)'
-              }}
             >
               {msg.role === 'user' ? (
                 <User className="h-4 w-4 text-white" />
               ) : (
-                <Bot className="h-4 w-4 text-[#0080ff]" />
+                <Bot className="h-4 w-4 text-accent-blue" />
               )}
             </div>
             <div className="relative max-w-[75%]">
               <div
                 className={`rounded-2xl px-4 py-3 ${
                   msg.role === 'user'
-                    ? 'text-white'
-                    : 'text-[#e8edf5] border border-[#1a1a3e]'
+                    ? 'text-white bg-accent-blue'
+                    : 'text-text-primary bg-bg-card border border-border-default'
                 }`}
-                style={{
-                  background: msg.role === 'user'
-                    ? 'linear-gradient(135deg, #0080ff, #0066cc)'
-                    : 'linear-gradient(135deg, rgba(13,13,32,0.8), rgba(10,10,26,0.6))'
-                }}
               >
                 <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
                 <p
                   className={`text-[10px] mt-1.5 ${
-                    msg.role === 'user' ? 'text-white/50' : 'text-[#334060]'
+                    msg.role === 'user' ? 'text-white/50' : 'text-text-muted'
                   }`}
                 >
                   {msg.timestamp.toLocaleTimeString()}
@@ -250,10 +240,10 @@ export default function AgentChat() {
               <button
                 onClick={() => handleCopy(msg.id, msg.content)}
                 aria-label="Copy message"
-                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-all duration-300 p-1.5 rounded-lg bg-[#0a0a18] border border-[#1a1a3e] text-[#556080] hover:text-white hover:border-[#0080ff40]"
+                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-all duration-300 p-1.5 rounded-lg bg-bg-primary border border-border-default text-text-muted hover:text-text-primary hover:border-accent-blue/40"
               >
                 {copiedId === msg.id ? (
-                  <Check className="h-3 w-3 text-[#00e68a]" />
+                  <Check className="h-3 w-3 text-status-success" />
                 ) : (
                   <Copy className="h-3 w-3" />
                 )}
@@ -264,14 +254,14 @@ export default function AgentChat() {
 
         {typing && (
           <div className="flex items-start gap-3 animate-fade-in">
-            <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1a1a3e, #12122a)' }}>
-              <Bot className="h-4 w-4 text-[#0080ff]" />
+            <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center bg-bg-secondary border border-border-default">
+              <Bot className="h-4 w-4 text-accent-blue" />
             </div>
-            <div className="rounded-2xl px-4 py-3 border border-[#1a1a3e]" style={{ background: 'linear-gradient(135deg, rgba(13,13,32,0.8), rgba(10,10,26,0.6))' }}>
+            <div className="rounded-2xl px-4 py-3 border border-border-default bg-bg-card">
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 bg-[#0080ff] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-1.5 h-1.5 bg-[#0080ff] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-1.5 h-1.5 bg-[#0080ff] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <span className="w-1.5 h-1.5 bg-accent-blue rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 bg-accent-blue rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 bg-accent-blue rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
@@ -281,7 +271,7 @@ export default function AgentChat() {
       </div>
 
       {/* Input area */}
-      <div className="border-t border-[#1a1a3e]/40 p-4" style={{ background: 'linear-gradient(180deg, rgba(8,8,24,0.9), rgba(5,5,16,0.95))' }}>
+      <div className="border-t border-border-default/40 p-4 bg-bg-secondary/50 backdrop-blur-md">
         <div className="flex items-end gap-3 max-w-4xl mx-auto">
           <div className="flex-1">
             <textarea
@@ -307,10 +297,10 @@ export default function AgentChat() {
         <div className="flex items-center justify-center mt-2 gap-2">
           <span
             className={`inline-block h-1.5 w-1.5 rounded-full glow-dot ${
-              connected ? 'text-[#00e68a] bg-[#00e68a]' : 'text-[#ff4466] bg-[#ff4466]'
+              connected ? 'text-status-success bg-status-success' : 'text-status-error bg-status-error'
             }`}
           />
-          <span className="text-[10px] text-[#334060]">
+          <span className="text-[10px] text-text-muted">
             {connected ? 'Connected' : 'Disconnected'}
           </span>
         </div>

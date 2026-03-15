@@ -1,7 +1,7 @@
 import { useLocation } from 'react-router-dom';
-import { LogOut } from 'lucide-react';
+import { LogOut, Sun, Moon } from 'lucide-react';
 import { t } from '@/lib/i18n';
-import { useLocaleContext } from '@/App';
+import { useLocaleContext, useTheme } from '@/App';
 import { useAuth } from '@/hooks/useAuth';
 
 const routeTitles: Record<string, string> = {
@@ -21,6 +21,7 @@ export default function Header() {
   const location = useLocation();
   const { logout } = useAuth();
   const { locale, setAppLocale } = useLocaleContext();
+  const { theme, toggleTheme } = useTheme();
 
   const titleKey = routeTitles[location.pathname] ?? 'nav.dashboard';
   const pageTitle = t(titleKey);
@@ -30,17 +31,30 @@ export default function Header() {
   };
 
   return (
-    <header className="h-14 flex items-center justify-between px-6 border-b border-[#1a1a3e]/40 animate-fade-in" style={{ background: 'linear-gradient(90deg, rgba(8,8,24,0.9), rgba(5,5,16,0.9))', backdropFilter: 'blur(12px)' }}>
+    <header className="h-14 flex items-center justify-between px-6 border-b border-border-default/40 animate-fade-in" style={{ background: 'var(--header-bg)', backdropFilter: 'blur(12px)' }}>
       {/* Page title */}
-      <h1 className="text-lg font-semibold text-white tracking-tight">{pageTitle}</h1>
+      <h1 className="text-lg font-semibold text-text-primary tracking-tight">{pageTitle}</h1>
 
       {/* Right-side controls */}
       <div className="flex items-center gap-3">
+        {/* Theme toggle */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="p-1.5 rounded-lg border border-border-default text-text-secondary hover:text-accent-blue hover:border-accent-blue/40 hover:bg-accent-blue/10 transition-all duration-300"
+        >
+          {theme === 'light' ? (
+            <Moon className="h-4 w-4" />
+          ) : (
+            <Sun className="h-4 w-4" />
+          )}
+        </button>
+
         {/* Language switcher */}
         <button
           type="button"
           onClick={toggleLanguage}
-          className="px-3 py-1 rounded-lg text-xs font-semibold border border-[#1a1a3e] text-[#8892a8] hover:text-white hover:border-[#0080ff40] hover:bg-[#0080ff10] transition-all duration-300"
+          className="px-3 py-1 rounded-lg text-xs font-semibold border border-border-default text-text-secondary hover:text-text-primary hover:border-accent-blue/40 hover:bg-accent-blue/10 transition-all duration-300"
         >
           {locale === 'zh' ? 'ZH' : 'EN'}
         </button>
@@ -49,7 +63,7 @@ export default function Header() {
         <button
           type="button"
           onClick={logout}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-[#8892a8] hover:text-[#ff4466] hover:bg-[#ff446610] transition-all duration-300"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-text-secondary hover:text-status-error hover:bg-status-error/10 transition-all duration-300"
         >
           <LogOut className="h-3.5 w-3.5" />
           <span>{t('auth.logout')}</span>

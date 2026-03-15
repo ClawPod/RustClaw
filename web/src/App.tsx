@@ -28,6 +28,20 @@ export const LocaleContext = createContext<LocaleContextType>({
 
 export const useLocaleContext = () => useContext(LocaleContext);
 
+// Theme context
+type Theme = 'light' | 'dark';
+interface ThemeContextType {
+  theme: Theme;
+  toggleTheme: () => void;
+}
+
+export const ThemeContext = createContext<ThemeContextType>({
+  theme: 'dark',
+  toggleTheme: () => {},
+});
+
+export const useTheme = () => useContext(ThemeContext);
+
 // Pairing dialog component
 function PairingDialog({ onPair }: { onPair: (code: string) => Promise<void> }) {
   const [code, setCode] = useState('');
@@ -48,23 +62,23 @@ function PairingDialog({ onPair }: { onPair: (code: string) => Promise<void> }) 
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ background: 'radial-gradient(ellipse at center, #0a0a20 0%, #050510 70%)' }}>
+    <div className="min-h-screen flex items-center justify-center bg-bg-primary">
       {/* Ambient glow */}
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-20 pointer-events-none" style={{ background: 'radial-gradient(circle, #0080ff 0%, transparent 70%)' }} />
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full opacity-10 pointer-events-none" style={{ background: 'radial-gradient(circle, var(--accent-blue) 0%, transparent 70%)' }} />
 
       <div className="relative glass-card p-8 w-full max-w-md animate-fade-in-scale">
         {/* Top glow accent */}
-        <div className="absolute -top-px left-1/4 right-1/4 h-px" style={{ background: 'linear-gradient(90deg, transparent, #0080ff, transparent)' }} />
+        <div className="absolute -top-px left-1/4 right-1/4 h-px" style={{ background: 'linear-gradient(90deg, transparent, var(--accent-blue), transparent)' }} />
 
         <div className="text-center mb-8">
           <img
             src="/_app/logo.png"
             alt="ZeroClaw"
             className="h-20 w-20 rounded-2xl object-cover mx-auto mb-4 animate-float"
-            style={{ boxShadow: '0 0 30px rgba(0,128,255,0.3)' }}
+            style={{ boxShadow: '0 0 30px var(--glow-blue)' }}
           />
           <h1 className="text-2xl font-bold text-gradient-blue mb-2">ZeroClaw</h1>
-          <p className="text-[#556080] text-sm">Enter the pairing code from your terminal</p>
+          <p className="text-text-muted text-sm">Enter the pairing code from your terminal</p>
         </div>
         <form onSubmit={handleSubmit}>
           <input
@@ -77,7 +91,7 @@ function PairingDialog({ onPair }: { onPair: (code: string) => Promise<void> }) 
             autoFocus
           />
           {error && (
-            <p className="text-[#ff4466] text-sm mb-4 text-center animate-fade-in">{error}</p>
+            <p className="text-status-error text-sm mb-4 text-center animate-fade-in">{error}</p>
           )}
           <button
             type="submit"
@@ -100,12 +114,30 @@ function PairingDialog({ onPair }: { onPair: (code: string) => Promise<void> }) 
 function AppContent() {
   const { isAuthenticated, requiresPairing, loading, pair, logout } = useAuth();
   const [locale, setLocaleState] = useState('zh');
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem('zeroclaw-theme');
+    return (saved as Theme) || 'dark';
+  });
   const draftStore = useDraftStore();
 
   const setAppLocale = (newLocale: string) => {
     setLocaleState(newLocale);
     setLocale(newLocale as Locale);
   };
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+  };
+
+  // Persist theme and update DOM
+  useEffect(() => {
+    localStorage.setItem('zeroclaw-theme', theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
 
   // On mount: detect locale from gateway
   useEffect(() => {
@@ -134,10 +166,10 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: 'radial-gradient(ellipse at center, #0a0a20 0%, #050510 70%)' }}>
+      <div className="min-h-screen flex items-center justify-center bg-bg-primary">
         <div className="flex flex-col items-center gap-4 animate-fade-in">
-          <div className="h-10 w-10 border-2 border-[#0080ff30] border-t-[#0080ff] rounded-full animate-spin" />
-          <p className="text-[#556080] text-sm">Connecting...</p>
+          <div className="h-10 w-10 border-2 border-accent-blue/30 border-t-accent-blue rounded-full animate-spin" />
+          <p className="text-text-muted text-sm">Connecting...</p>
         </div>
       </div>
     );
@@ -149,23 +181,25 @@ function AppContent() {
 
   return (
     <DraftContext.Provider value={draftStore}>
-      <LocaleContext.Provider value={{ locale, setAppLocale }}>
-        <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/agent" element={<AgentChat />} />
-            <Route path="/tools" element={<Tools />} />
-            <Route path="/cron" element={<Cron />} />
-            <Route path="/integrations" element={<Integrations />} />
-            <Route path="/memory" element={<Memory />} />
-            <Route path="/config" element={<Config />} />
-            <Route path="/cost" element={<Cost />} />
-            <Route path="/logs" element={<Logs />} />
-            <Route path="/doctor" element={<Doctor />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-      </LocaleContext.Provider>
+      <ThemeContext.Provider value={{ theme, toggleTheme }}>
+        <LocaleContext.Provider value={{ locale, setAppLocale }}>
+          <Routes>
+            <Route element={<Layout />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/agent" element={<AgentChat />} />
+              <Route path="/tools" element={<Tools />} />
+              <Route path="/cron" element={<Cron />} />
+              <Route path="/integrations" element={<Integrations />} />
+              <Route path="/memory" element={<Memory />} />
+              <Route path="/config" element={<Config />} />
+              <Route path="/cost" element={<Cost />} />
+              <Route path="/logs" element={<Logs />} />
+              <Route path="/doctor" element={<Doctor />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Routes>
+        </LocaleContext.Provider>
+      </ThemeContext.Provider>
     </DraftContext.Provider>
   );
 }
