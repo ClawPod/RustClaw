@@ -88,7 +88,7 @@ export default function AgentChat() {
           const content = msg.full_response ?? msg.content ?? pendingContentRef.current;
           if (content) {
             const screenshotMatch = content.match(/screenshot_[\w\d_-]+\.png/i);
-            let imageUrl;
+            let imageUrl: string | undefined;
             if (screenshotMatch) {
               const filename = screenshotMatch[0];
               const token = getToken();
@@ -126,7 +126,7 @@ export default function AgentChat() {
         case 'tool_result': {
           const content = msg.output ?? '';
           const screenshotMatch = content.match(/screenshot_[\w\d_-]+\.png/i);
-          let imageUrl;
+          let imageUrl: string | undefined;
           if (screenshotMatch) {
             const filename = screenshotMatch[0];
             const token = getToken();

@@ -121,7 +121,7 @@ export default function Tools() {
                       )}
                     </div>
                     <p className="text-sm text-text-secondary mt-2 line-clamp-2">
-                      {(locale === 'zh' || locale === 'zh-CN') && tool.description_zh
+                      {locale === 'zh' && tool.description_zh
                         ? tool.description_zh
                         : tool.description}
                     </p>
