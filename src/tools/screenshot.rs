@@ -133,8 +133,7 @@ impl ScreenshotTool {
                 Ok(ToolResult {
                     success: true,
                     output: format!(
-                        "Screenshot saved to: {}",
-                        output_path.display(),
+                        "Screenshot saved to: {safe_name}",
                     ),
                     error: None,
                 })
@@ -162,11 +161,11 @@ impl Tool for ScreenshotTool {
     }
 
     fn description(&self) -> &str {
-        "Capture a screenshot of the current screen. Returns the file path."
+        "Capture a screenshot of the current screen. Returns the filename."
     }
 
     fn description_zh(&self) -> &str {
-        "截取当前屏幕。返回文件路径。"
+        "截取当前屏幕。返回文件名。"
     }
 
     fn parameters_schema(&self) -> serde_json::Value {

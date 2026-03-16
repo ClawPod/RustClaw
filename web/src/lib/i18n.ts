@@ -260,6 +260,8 @@ const translations: Record<Locale, Record<string, string>> = {
     'common.status_inactive': 'Inactive',
     'common.created': 'Created',
     'common.updated': 'Updated',
+    'common.copy': 'Copy',
+    'common.open_new_tab': 'Open in new tab',
 
     // Health
     'health.title': 'System Health',
@@ -525,6 +527,8 @@ const translations: Record<Locale, Record<string, string>> = {
     'common.status_inactive': '不活跃',
     'common.created': '创建时间',
     'common.updated': '更新时间',
+    'common.copy': '复制',
+    'common.open_new_tab': '在浏览器打开',
 
     // Health
     'health.title': '系统健康',

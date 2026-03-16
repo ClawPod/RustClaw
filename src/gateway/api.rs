@@ -4,11 +4,13 @@
 
 use super::AppState;
 use axum::{
+    body::Body,
     extract::{Path, Query, State},
     http::{header, HeaderMap, StatusCode},
     response::{IntoResponse, Json},
 };
 use serde::Deserialize;
+use std::path::PathBuf;
 
 const MASKED_SECRET: &str = "***MASKED***";
 
@@ -71,7 +73,63 @@ pub struct CronAddBody {
     pub command: String,
 }
 
+#[derive(Deserialize)]
+pub struct WorkspaceQuery {
+    pub token: Option<String>,
+}
+
 // ── Handlers ────────────────────────────────────────────────────
+
+/// GET /api/workspace/{*path} — serve files from workspace_dir
+pub async fn handle_api_workspace_file(
+    State(state): State<AppState>,
+    Query(params): Query<WorkspaceQuery>,
+    headers: HeaderMap,
+    Path(path): Path<String>,
+) -> impl IntoResponse {
+    if state.pairing.require_pairing() {
+        let token = extract_bearer_token(&headers).or(params.token.as_deref()).unwrap_or("");
+        if !state.pairing.is_authenticated(token) {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(serde_json::json!({
+                    "error": "Unauthorized — pair first via POST /pair, then send Authorization: Bearer <token> or ?token=<token>"
+                })),
+            )
+                .into_response();
+        }
+    }
+
+    let workspace_dir = state.config.lock().workspace_dir.clone();
+    let safe_path = PathBuf::from(path);
+
+    // Security: prevent path traversal
+    for component in safe_path.components() {
+        if let std::path::Component::ParentDir = component {
+            return (StatusCode::FORBIDDEN, "Access denied").into_response();
+        }
+    }
+
+    let full_path = workspace_dir.join(safe_path);
+
+    // Security: ensure it's a file
+    if !full_path.is_file() {
+        return (StatusCode::NOT_FOUND, "File not found").into_response();
+    }
+
+    // Serve the file
+    match tokio::fs::read(&full_path).await {
+        Ok(bytes) => {
+            let mime = mime_guess::from_path(&full_path).first_or_octet_stream();
+            (
+                [(header::CONTENT_TYPE, mime.to_string())],
+                Body::from(bytes),
+            )
+                .into_response()
+        }
+        Err(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Failed to read file").into_response(),
+    }
+}
 
 /// GET /api/status — system status overview
 pub async fn handle_api_status(

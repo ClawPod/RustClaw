@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Send, User, AlertCircle, Copy, Check } from 'lucide-react';
+import { Send, User, AlertCircle, Copy, Check, ExternalLink } from 'lucide-react';
 import { BotAvatar } from '@/components/BotAvatar';
 import { t } from '@/lib/i18n';
 import type { WsMessage } from '@/types/api';
 import { WebSocketClient } from '@/lib/ws';
+import { getToken } from '@/lib/auth';
 import { generateUUID } from '@/lib/uuid';
 import { useDraft } from '@/hooks/useDraft';
 
@@ -12,6 +13,7 @@ interface ChatMessage {
   role: 'user' | 'agent';
   content: string;
   timestamp: Date;
+  imageUrl?: string;
 }
 
 const DRAFT_KEY = 'agent-chat';
@@ -28,7 +30,30 @@ export default function AgentChat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
   const pendingContentRef = useRef('');
+
+  const renderMessageContent = useCallback((content: string) => {
+    const token = getToken();
+    const parts = content.split(/(screenshot_[\w\d_-]+\.png)/gi);
+    
+    return parts.map((part, i) => {
+      if (part.match(/^screenshot_[\w\d_-]+\.png$/i)) {
+        const url = `/api/workspace/${part}${token ? `?token=${token}` : ''}`;
+        return (
+          <button
+            key={i}
+            onClick={() => setActiveImageUrl(url)}
+            className="text-accent-blue hover:text-accent-blue/80 font-mono bg-accent-blue/5 px-1.5 py-0.5 rounded border border-accent-blue/10 mx-0.5 transition-all hover:bg-accent-blue/10 active:scale-95 inline-flex items-center gap-1 group/link"
+          >
+            {part}
+            <ExternalLink className="h-3 w-3 opacity-50 group-hover/link:opacity-100 transition-opacity" />
+          </button>
+        );
+      }
+      return part;
+    });
+  }, []);
 
   // Persist draft to in-memory store so it survives route changes
   useEffect(() => {
@@ -62,6 +87,14 @@ export default function AgentChat() {
         case 'done': {
           const content = msg.full_response ?? msg.content ?? pendingContentRef.current;
           if (content) {
+            const screenshotMatch = content.match(/screenshot_[\w\d_-]+\.png/i);
+            let imageUrl;
+            if (screenshotMatch) {
+              const filename = screenshotMatch[0];
+              const token = getToken();
+              imageUrl = `/api/workspace/${filename}${token ? `?token=${token}` : ''}`;
+            }
+
             setMessages((prev) => [
               ...prev,
               {
@@ -69,6 +102,7 @@ export default function AgentChat() {
                 role: 'agent',
                 content,
                 timestamp: new Date(),
+                imageUrl,
               },
             ]);
           }
@@ -89,17 +123,28 @@ export default function AgentChat() {
           ]);
           break;
 
-        case 'tool_result':
+        case 'tool_result': {
+          const content = msg.output ?? '';
+          const screenshotMatch = content.match(/screenshot_[\w\d_-]+\.png/i);
+          let imageUrl;
+          if (screenshotMatch) {
+            const filename = screenshotMatch[0];
+            const token = getToken();
+            imageUrl = `/api/workspace/${filename}${token ? `?token=${token}` : ''}`;
+          }
+
           setMessages((prev) => [
             ...prev,
             {
               id: generateUUID(),
               role: 'agent',
-              content: `[${t('agent.tool_result')}] ${msg.output ?? ''}`,
+              content: `[${t('agent.tool_result')}] ${content}`,
               timestamp: new Date(),
+              imageUrl,
             },
           ]);
           break;
+        }
 
         case 'error':
           setMessages((prev) => [
@@ -180,7 +225,39 @@ export default function AgentChat() {
   }, []);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)]">
+    <div className="flex flex-col h-[calc(100vh-3.5rem)] relative">
+      {/* Image Preview Modal */}
+      {activeImageUrl && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+          onClick={() => setActiveImageUrl(null)}
+        >
+          <div className="relative max-w-full max-h-full">
+            <img 
+              src={activeImageUrl} 
+              alt="Preview" 
+              className="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain animate-scale-in"
+              onClick={(e) => e.stopPropagation()}
+            />
+            <div className="mt-4 flex justify-center gap-4">
+              <button
+                onClick={() => window.open(activeImageUrl, '_blank')}
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg flex items-center gap-2 transition-colors border border-white/20"
+              >
+                <ExternalLink className="h-4 w-4" />
+                {t('common.open_new_tab')}
+              </button>
+              <button
+                onClick={() => setActiveImageUrl(null)}
+                className="px-4 py-2 bg-accent-blue text-white rounded-lg hover:bg-accent-blue/80 transition-colors shadow-lg shadow-accent-blue/20"
+              >
+                {t('common.close')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Connection status bar */}
       {error && (
         <div className="px-4 py-2 bg-status-error/15 border-b border-status-error/30 flex items-center gap-2 text-sm text-status-error animate-fade-in">
@@ -230,7 +307,18 @@ export default function AgentChat() {
                     : 'text-text-primary bg-bg-card border border-border-default'
                 }`}
               >
-                <p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+                <div className="text-sm whitespace-pre-wrap break-words">{renderMessageContent(msg.content)}</div>
+                {msg.imageUrl && (
+                  <div className="mt-3 relative group/img">
+                    <img 
+                      src={msg.imageUrl} 
+                      alt="Screenshot" 
+                      className="rounded-xl max-w-full h-auto cursor-pointer border border-border-default/50 hover:border-accent-blue/40 transition-all duration-300 shadow-sm hover:shadow-md"
+                      onClick={() => setActiveImageUrl(msg.imageUrl!)}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors rounded-xl pointer-events-none" />
+                  </div>
+                )}
                 <p
                   className={`text-[10px] mt-1.5 ${
                     msg.role === 'user' ? 'text-white/50' : 'text-text-muted'
