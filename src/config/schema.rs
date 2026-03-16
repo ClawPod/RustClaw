@@ -232,6 +232,10 @@ pub struct Config {
     #[serde(default)]
     pub agents: HashMap<String, DelegateAgentConfig>,
 
+    /// Swarm configurations for multi-agent orchestration.
+    #[serde(default)]
+    pub swarms: HashMap<String, SwarmConfig>,
+
     /// Hooks configuration (lifecycle hooks and built-in hook toggles).
     #[serde(default)]
     pub hooks: HooksConfig,
@@ -255,6 +259,58 @@ pub struct Config {
     /// Dynamic node discovery configuration (`[nodes]`).
     #[serde(default)]
     pub nodes: NodesConfig,
+
+    /// Multi-client workspace isolation configuration (`[workspace]`).
+    #[serde(default)]
+    pub workspace: WorkspaceConfig,
+}
+
+/// Multi-client workspace isolation configuration.
+///
+/// When enabled, each client engagement gets an isolated workspace with
+/// separate memory, audit, secrets, and tool restrictions.
+#[allow(clippy::struct_excessive_bools)]
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct WorkspaceConfig {
+    /// Enable workspace isolation. Default: false.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Currently active workspace name.
+    #[serde(default)]
+    pub active_workspace: Option<String>,
+    /// Base directory for workspace profiles.
+    #[serde(default = "default_workspaces_dir")]
+    pub workspaces_dir: String,
+    /// Isolate memory databases per workspace. Default: true.
+    #[serde(default = "default_true")]
+    pub isolate_memory: bool,
+    /// Isolate secrets namespaces per workspace. Default: true.
+    #[serde(default = "default_true")]
+    pub isolate_secrets: bool,
+    /// Isolate audit logs per workspace. Default: true.
+    #[serde(default = "default_true")]
+    pub isolate_audit: bool,
+    /// Allow searching across workspaces. Default: false (security).
+    #[serde(default)]
+    pub cross_workspace_search: bool,
+}
+
+fn default_workspaces_dir() -> String {
+    "~/.zeroclaw/workspaces".to_string()
+}
+
+impl Default for WorkspaceConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            active_workspace: None,
+            workspaces_dir: default_workspaces_dir(),
+            isolate_memory: true,
+            isolate_secrets: true,
+            isolate_audit: true,
+            cross_workspace_search: false,
+        }
+    }
 }
 
 /// Named provider profile definition compatible with Codex app-server style config.
@@ -317,6 +373,44 @@ pub struct DelegateAgentConfig {
     /// Maximum tool-call iterations in agentic mode.
     #[serde(default = "default_max_tool_iterations")]
     pub max_iterations: usize,
+}
+
+// ── Swarms ──────────────────────────────────────────────────────
+
+/// Orchestration strategy for a swarm of agents.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum SwarmStrategy {
+    /// Run agents sequentially; each agent's output feeds into the next.
+    Sequential,
+    /// Run agents in parallel; collect all outputs.
+    Parallel,
+    /// Use the LLM to pick the best agent for the task.
+    Router,
+}
+
+/// Configuration for a swarm of coordinated agents.
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct SwarmConfig {
+    /// Ordered list of agent names (must reference keys in `agents`).
+    pub agents: Vec<String>,
+    /// Orchestration strategy.
+    pub strategy: SwarmStrategy,
+    /// System prompt for router strategy (used to pick the best agent).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub router_prompt: Option<String>,
+    /// Optional description shown to the LLM when choosing swarms.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Maximum total timeout for the swarm execution in seconds.
+    #[serde(default = "default_swarm_timeout_secs")]
+    pub timeout_secs: u64,
+}
+
+const DEFAULT_SWARM_TIMEOUT_SECS: u64 = 300;
+
+fn default_swarm_timeout_secs() -> u64 {
+    DEFAULT_SWARM_TIMEOUT_SECS
 }
 
 /// Valid temperature range for all paths (config, CLI, env override).
@@ -791,6 +885,11 @@ pub struct AgentConfig {
     /// Maximum conversation history messages retained per session. Default: `50`.
     #[serde(default = "default_agent_max_history_messages")]
     pub max_history_messages: usize,
+    /// Maximum estimated tokens for conversation history before compaction triggers.
+    /// Uses ~4 chars/token heuristic. When this threshold is exceeded, older messages
+    /// are summarized to preserve context while staying within budget. Default: `32000`.
+    #[serde(default = "default_agent_max_context_tokens")]
+    pub max_context_tokens: usize,
     /// Enable parallel tool execution within a single iteration. Default: `false`.
     #[serde(default)]
     pub parallel_tools: bool,
@@ -820,6 +919,10 @@ fn default_agent_max_history_messages() -> usize {
     50
 }
 
+fn default_agent_max_context_tokens() -> usize {
+    32_000
+}
+
 fn default_agent_tool_dispatcher() -> String {
     "auto".into()
 }
@@ -830,6 +933,7 @@ impl Default for AgentConfig {
             compact_context: false,
             max_tool_iterations: default_agent_max_tool_iterations(),
             max_history_messages: default_agent_max_history_messages(),
+            max_context_tokens: default_agent_max_context_tokens(),
             parallel_tools: false,
             tool_dispatcher: default_agent_tool_dispatcher(),
             tool_call_dedup_exempt: Vec::new(),
@@ -1421,6 +1525,10 @@ pub struct HttpRequestConfig {
     /// Request timeout in seconds (default: 30)
     #[serde(default = "default_http_timeout_secs")]
     pub timeout_secs: u64,
+    /// Allow requests to private/LAN hosts (RFC 1918, loopback, link-local, .local).
+    /// Default: false (deny private hosts for SSRF protection).
+    #[serde(default)]
+    pub allow_private_hosts: bool,
 }
 
 impl Default for HttpRequestConfig {
@@ -1430,6 +1538,7 @@ impl Default for HttpRequestConfig {
             allowed_domains: vec![],
             max_response_size: default_http_max_response_size(),
             timeout_secs: default_http_timeout_secs(),
+            allow_private_hosts: false,
         }
     }
 }
@@ -2903,15 +3012,26 @@ pub struct HeartbeatConfig {
     pub enabled: bool,
     /// Interval in minutes between heartbeat pings. Default: `30`.
     pub interval_minutes: u32,
+    /// Enable two-phase heartbeat: Phase 1 asks LLM whether to run, Phase 2
+    /// executes only when the LLM decides there is work to do. Saves API cost
+    /// during quiet periods. Default: `true`.
+    #[serde(default = "default_two_phase")]
+    pub two_phase: bool,
     /// Optional fallback task text when `HEARTBEAT.md` has no task entries.
     #[serde(default)]
     pub message: Option<String>,
     /// Optional delivery channel for heartbeat output (for example: `telegram`).
+    /// When omitted, auto-selects the first configured channel.
     #[serde(default, alias = "channel")]
     pub target: Option<String>,
-    /// Optional delivery recipient/chat identifier (required when `target` is set).
+    /// Optional delivery recipient/chat identifier (required when `target` is
+    /// explicitly set).
     #[serde(default, alias = "recipient")]
     pub to: Option<String>,
+}
+
+fn default_two_phase() -> bool {
+    true
 }
 
 impl Default for HeartbeatConfig {
@@ -2919,6 +3039,7 @@ impl Default for HeartbeatConfig {
         Self {
             enabled: false,
             interval_minutes: 30,
+            two_phase: true,
             message: None,
             target: None,
             to: None,
@@ -3048,6 +3169,7 @@ impl<T: ChannelConfig> crate::config::traits::ConfigHandle for ConfigWrapper<T> 
 ///
 /// Each channel sub-section (e.g. `telegram`, `discord`) is optional;
 /// setting it to `Some(...)` enables that channel.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
 pub struct ChannelsConfig {
     /// Enable the CLI interactive channel. Default: `true`.
@@ -3110,6 +3232,10 @@ pub struct ChannelsConfig {
     /// not forwarded as individual channel messages. Default: `true`.
     #[serde(default = "default_true")]
     pub show_tool_calls: bool,
+    /// Persist channel conversation history to JSONL files so sessions survive
+    /// daemon restarts. Files are stored in `{workspace}/sessions/`. Default: `true`.
+    #[serde(default = "default_true")]
+    pub session_persistence: bool,
 }
 
 impl ChannelsConfig {
@@ -3244,6 +3370,7 @@ impl Default for ChannelsConfig {
             message_timeout_secs: default_channel_message_timeout_secs(),
             ack_reactions: true,
             show_tool_calls: true,
+            session_persistence: true,
         }
     }
 }
@@ -4177,6 +4304,7 @@ impl Default for Config {
             cost: CostConfig::default(),
             peripherals: PeripheralsConfig::default(),
             agents: HashMap::new(),
+            swarms: HashMap::new(),
             hooks: HooksConfig::default(),
             hardware: HardwareConfig::default(),
             query_classification: QueryClassificationConfig::default(),
@@ -4184,6 +4312,7 @@ impl Default for Config {
             tts: TtsConfig::default(),
             mcp: McpConfig::default(),
             nodes: NodesConfig::default(),
+            workspace: WorkspaceConfig::default(),
         }
     }
 }
@@ -6225,6 +6354,7 @@ default_temperature = 0.7
             heartbeat: HeartbeatConfig {
                 enabled: true,
                 interval_minutes: 15,
+                two_phase: true,
                 message: Some("Check London time".into()),
                 target: Some("telegram".into()),
                 to: Some("123456".into()),
@@ -6264,6 +6394,7 @@ default_temperature = 0.7
                 message_timeout_secs: 300,
                 ack_reactions: true,
                 show_tool_calls: true,
+                session_persistence: true,
             },
             memory: MemoryConfig::default(),
             storage: StorageConfig::default(),
@@ -6282,12 +6413,14 @@ default_temperature = 0.7
             cost: CostConfig::default(),
             peripherals: PeripheralsConfig::default(),
             agents: HashMap::new(),
+            swarms: HashMap::new(),
             hooks: HooksConfig::default(),
             hardware: HardwareConfig::default(),
             transcription: TranscriptionConfig::default(),
             tts: TtsConfig::default(),
             mcp: McpConfig::default(),
             nodes: NodesConfig::default(),
+            workspace: WorkspaceConfig::default(),
         };
 
         let toml_str = toml::to_string_pretty(&config).unwrap();
@@ -6573,12 +6706,14 @@ tool_dispatcher = "xml"
             cost: CostConfig::default(),
             peripherals: PeripheralsConfig::default(),
             agents: HashMap::new(),
+            swarms: HashMap::new(),
             hooks: HooksConfig::default(),
             hardware: HardwareConfig::default(),
             transcription: TranscriptionConfig::default(),
             tts: TtsConfig::default(),
             mcp: McpConfig::default(),
             nodes: NodesConfig::default(),
+            workspace: WorkspaceConfig::default(),
         };
 
         config.save().await.unwrap();
@@ -6978,6 +7113,7 @@ allowed_users = ["@ops:matrix.org"]
             message_timeout_secs: 300,
             ack_reactions: true,
             show_tool_calls: true,
+            session_persistence: true,
         };
         let toml_str = toml::to_string_pretty(&c).unwrap();
         let parsed: ChannelsConfig = toml::from_str(&toml_str).unwrap();
@@ -7205,6 +7341,7 @@ channel_id = "C123"
             message_timeout_secs: 300,
             ack_reactions: true,
             show_tool_calls: true,
+            session_persistence: true,
         };
         let toml_str = toml::to_string_pretty(&c).unwrap();
         let parsed: ChannelsConfig = toml::from_str(&toml_str).unwrap();
@@ -9322,5 +9459,73 @@ require_otp_to_resume = true
                 serde_json::from_str(expected_json).expect("deserialize");
             assert_eq!(&deserialized, variant);
         }
+    }
+
+    #[test]
+    async fn swarm_strategy_roundtrip() {
+        let cases = vec![
+            (SwarmStrategy::Sequential, "\"sequential\""),
+            (SwarmStrategy::Parallel, "\"parallel\""),
+            (SwarmStrategy::Router, "\"router\""),
+        ];
+        for (variant, expected_json) in &cases {
+            let serialized = serde_json::to_string(variant).expect("serialize");
+            assert_eq!(&serialized, expected_json, "variant: {variant:?}");
+            let deserialized: SwarmStrategy =
+                serde_json::from_str(expected_json).expect("deserialize");
+            assert_eq!(&deserialized, variant);
+        }
+    }
+
+    #[test]
+    async fn swarm_config_deserializes_with_defaults() {
+        let toml_str = r#"
+            agents = ["researcher", "writer"]
+            strategy = "sequential"
+        "#;
+        let config: SwarmConfig = toml::from_str(toml_str).expect("deserialize");
+        assert_eq!(config.agents, vec!["researcher", "writer"]);
+        assert_eq!(config.strategy, SwarmStrategy::Sequential);
+        assert!(config.router_prompt.is_none());
+        assert!(config.description.is_none());
+        assert_eq!(config.timeout_secs, 300);
+    }
+
+    #[test]
+    async fn swarm_config_deserializes_full() {
+        let toml_str = r#"
+            agents = ["a", "b", "c"]
+            strategy = "router"
+            router_prompt = "Pick the best."
+            description = "Multi-agent router"
+            timeout_secs = 120
+        "#;
+        let config: SwarmConfig = toml::from_str(toml_str).expect("deserialize");
+        assert_eq!(config.agents.len(), 3);
+        assert_eq!(config.strategy, SwarmStrategy::Router);
+        assert_eq!(config.router_prompt.as_deref(), Some("Pick the best."));
+        assert_eq!(config.description.as_deref(), Some("Multi-agent router"));
+        assert_eq!(config.timeout_secs, 120);
+    }
+
+    #[test]
+    async fn config_with_swarms_section_deserializes() {
+        let toml_str = r#"
+            [agents.researcher]
+            provider = "ollama"
+            model = "llama3"
+
+            [agents.writer]
+            provider = "openrouter"
+            model = "claude-sonnet"
+
+            [swarms.pipeline]
+            agents = ["researcher", "writer"]
+            strategy = "sequential"
+        "#;
+        let config: Config = toml::from_str(toml_str).expect("deserialize");
+        assert_eq!(config.agents.len(), 2);
+        assert_eq!(config.swarms.len(), 1);
+        assert!(config.swarms.contains_key("pipeline"));
     }
 }

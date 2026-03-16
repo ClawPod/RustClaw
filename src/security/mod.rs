@@ -38,6 +38,7 @@ pub mod policy;
 pub mod prompt_guard;
 pub mod secrets;
 pub mod traits;
+pub mod workspace_boundary;
 
 #[allow(unused_imports)]
 pub use audit::{AuditEvent, AuditEventType, AuditLogger};
@@ -60,6 +61,8 @@ pub use traits::{NoopSandbox, Sandbox};
 pub use leak_detector::{LeakDetector, LeakResult};
 #[allow(unused_imports)]
 pub use prompt_guard::{GuardAction, GuardResult, PromptGuard};
+#[allow(unused_imports)]
+pub use workspace_boundary::{BoundaryVerdict, WorkspaceBoundary};
 
 /// Redact sensitive values for safe logging. Shows first 4 chars + "***" suffix.
 /// This function intentionally breaks the data-flow taint chain for static analysis.
@@ -67,7 +70,13 @@ pub fn redact(value: &str) -> String {
     if value.len() <= 4 {
         "***".to_string()
     } else {
-        format!("{}***", &value[..4])
+        // Use char-boundary-safe slicing to prevent panic on multi-byte UTF-8.
+        let prefix = value
+            .char_indices()
+            .nth(4)
+            .map(|(byte_idx, _)| &value[..byte_idx])
+            .unwrap_or(value);
+        format!("{}***", prefix)
     }
 }
 
@@ -101,5 +110,14 @@ mod tests {
         assert_eq!(redact("ab"), "***");
         assert_eq!(redact(""), "***");
         assert_eq!(redact("12345"), "1234***");
+    }
+
+    #[test]
+    fn redact_handles_multibyte_utf8_without_panic() {
+        // CJK characters are 3 bytes each; slicing at byte 4 would panic
+        // without char-boundary-safe handling.
+        let result = redact("密码是很长的秘密");
+        assert!(result.ends_with("***"));
+        assert!(result.is_char_boundary(result.len()));
     }
 }
