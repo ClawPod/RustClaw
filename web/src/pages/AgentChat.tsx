@@ -35,10 +35,10 @@ export default function AgentChat() {
 
   const renderMessageContent = useCallback((content: string) => {
     const token = getToken();
-    const parts = content.split(/(screenshot_[\w\d_-]+\.png)/gi);
+    const parts = content.split(/((?:[\w\d_-]+\/)*[\d_-]+_screenshot\.png|screenshot_[\w\d_-]+\.png)/gi);
     
     return parts.map((part, i) => {
-      if (part.match(/^screenshot_[\w\d_-]+\.png$/i)) {
+      if (part.match(/(?:[\w\d_-]+\/)*[\d_-]+_screenshot\.png$/i) || part.match(/screenshot_[\w\d_-]+\.png$/i)) {
         const url = `/api/workspace/${part}${token ? `?token=${token}` : ''}`;
         return (
           <button
@@ -87,12 +87,12 @@ export default function AgentChat() {
         case 'done': {
           const content = msg.full_response ?? msg.content ?? pendingContentRef.current;
           if (content) {
-            const screenshotMatch = content.match(/screenshot_[\w\d_-]+\.png/i);
+            const screenshotMatch = content.match(/(?:[\w\d_-]+\/)*[\d_-]+_screenshot\.png|screenshot_[\w\d_-]+\.png/i);
             let imageUrl: string | undefined;
             if (screenshotMatch) {
-              const filename = screenshotMatch[0];
+              const pathStr = screenshotMatch[0];
               const token = getToken();
-              imageUrl = `/api/workspace/${filename}${token ? `?token=${token}` : ''}`;
+              imageUrl = `/api/workspace/${pathStr}${token ? `?token=${token}` : ''}`;
             }
 
             setMessages((prev) => [
@@ -125,12 +125,12 @@ export default function AgentChat() {
 
         case 'tool_result': {
           const content = msg.output ?? '';
-          const screenshotMatch = content.match(/screenshot_[\w\d_-]+\.png/i);
+          const screenshotMatch = content.match(/(?:[\w\d_-]+\/)*[\d_-]+_screenshot\.png|screenshot_[\w\d_-]+\.png/i);
           let imageUrl: string | undefined;
           if (screenshotMatch) {
-            const filename = screenshotMatch[0];
+            const pathStr = screenshotMatch[0];
             const token = getToken();
-            imageUrl = `/api/workspace/${filename}${token ? `?token=${token}` : ''}`;
+            imageUrl = `/api/workspace/${pathStr}${token ? `?token=${token}` : ''}`;
           }
 
           setMessages((prev) => [

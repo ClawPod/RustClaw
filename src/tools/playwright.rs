@@ -41,6 +41,7 @@ pub enum PlaywrightAction {
         path: Option<String>,
         #[serde(default)]
         full_page: bool,
+        workspace_dir: Option<String>,
     },
 }
 
@@ -200,12 +201,19 @@ impl Tool for PlaywrightTool {
     }
 
     async fn execute(&self, args: Value) -> anyhow::Result<ToolResult> {
-        let action: PlaywrightAction = serde_json::from_value(args)
+        let mut action: PlaywrightAction = serde_json::from_value(args)
             .context("Failed to parse PlaywrightAction")?;
 
         // Domain validation for 'open' action
         if let PlaywrightAction::Open { url } = &action {
             self.validate_url(url)?;
+        }
+
+        // Inject workspace_dir for screenshots if not provided
+        if let PlaywrightAction::Screenshot { workspace_dir, .. } = &mut action {
+            if workspace_dir.is_none() {
+                *workspace_dir = Some(self.security.workspace_dir.to_string_lossy().to_string());
+            }
         }
 
         // For other actions, we assume the session is already open and validated
