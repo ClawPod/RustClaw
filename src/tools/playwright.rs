@@ -167,6 +167,10 @@ impl Tool for PlaywrightTool {
         "High-performance browser automation using Playwright sidecar. Supports complex interactions, scripting, and screenshots."
     }
 
+    fn description_zh(&self) -> &str {
+        "高性能浏览器自动化，基于 Playwright。支持复杂的交互、脚本和截图。"
+    }
+
     fn parameters_schema(&self) -> Value {
         json!({
             "type": "object",
