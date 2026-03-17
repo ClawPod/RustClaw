@@ -36,6 +36,7 @@ const SUPPORTED_PROXY_SERVICE_KEYS: &[&str] = &[
     "channel.wati",
     "channel.whatsapp",
     "tool.browser",
+    "tool.playwright",
     "tool.composio",
     "tool.http_request",
     "tool.pushover",
@@ -195,6 +196,10 @@ pub struct Config {
     /// Browser automation configuration (`[browser]`).
     #[serde(default)]
     pub browser: BrowserConfig,
+
+    /// Playwright automation configuration (`[playwright]`).
+    #[serde(default)]
+    pub playwright: PlaywrightConfig,
 
     /// HTTP request tool configuration (`[http_request]`).
     #[serde(default)]
@@ -1502,6 +1507,48 @@ impl Default for BrowserConfig {
             native_webdriver_url: default_browser_webdriver_url(),
             native_chrome_path: None,
             computer_use: BrowserComputerUseConfig::default(),
+        }
+    }
+}
+
+// ── Playwright automation ───────────────────────────────────────
+
+/// Playwright automation configuration (`[playwright]` section).
+#[derive(Debug, Clone, Serialize, Deserialize, JsonSchema)]
+pub struct PlaywrightConfig {
+    /// Enable playwright tool. Default: false.
+    #[serde(default)]
+    pub enabled: bool,
+    /// Playwright sidecar endpoint (e.g. "http://127.0.0.1:3000").
+    #[serde(default = "default_playwright_endpoint")]
+    pub endpoint: String,
+    /// Optional API key for the sidecar.
+    #[serde(default)]
+    pub api_key: Option<String>,
+    /// Use proxy for browser requests. Default: true.
+    #[serde(default = "default_true")]
+    pub use_proxy: bool,
+    /// Allowed domains for playwright (exact or subdomain match). Default: ["*"].
+    #[serde(default = "default_playwright_allowed_domains")]
+    pub allowed_domains: Vec<String>,
+}
+
+fn default_playwright_endpoint() -> String {
+    "http://127.0.0.1:3000".to_string()
+}
+
+fn default_playwright_allowed_domains() -> Vec<String> {
+    vec!["*".to_string()]
+}
+
+impl Default for PlaywrightConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            endpoint: default_playwright_endpoint(),
+            api_key: None,
+            use_proxy: true,
+            allowed_domains: default_playwright_allowed_domains(),
         }
     }
 }
@@ -4295,6 +4342,7 @@ impl Default for Config {
             composio: ComposioConfig::default(),
             secrets: SecretsConfig::default(),
             browser: BrowserConfig::default(),
+            playwright: PlaywrightConfig::default(),
             http_request: HttpRequestConfig::default(),
             multimodal: MultimodalConfig::default(),
             web_fetch: WebFetchConfig::default(),
@@ -6403,6 +6451,7 @@ default_temperature = 0.7
             composio: ComposioConfig::default(),
             secrets: SecretsConfig::default(),
             browser: BrowserConfig::default(),
+            playwright: PlaywrightConfig::default(),
             http_request: HttpRequestConfig::default(),
             multimodal: MultimodalConfig::default(),
             web_fetch: WebFetchConfig::default(),
@@ -6696,6 +6745,7 @@ tool_dispatcher = "xml"
             composio: ComposioConfig::default(),
             secrets: SecretsConfig::default(),
             browser: BrowserConfig::default(),
+            playwright: PlaywrightConfig::default(),
             http_request: HttpRequestConfig::default(),
             multimodal: MultimodalConfig::default(),
             web_fetch: WebFetchConfig::default(),

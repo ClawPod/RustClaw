@@ -4267,6 +4267,7 @@ mod tests {
             "mock-provider",
             "mock-model",
             0.0,
+            "en",
             true,
             None,
             "cli",
@@ -4304,6 +4305,7 @@ mod tests {
             max_images: 4,
             max_image_size_mb: 1,
             allow_remote_fetch: false,
+            public_base_url: None,
         };
 
         let err = run_tool_call_loop(
@@ -4314,6 +4316,7 @@ mod tests {
             "mock-provider",
             "mock-model",
             0.0,
+            "en",
             true,
             None,
             "cli",
@@ -4355,6 +4358,7 @@ mod tests {
             "mock-provider",
             "mock-model",
             0.0,
+            "en",
             true,
             None,
             "cli",
@@ -4482,6 +4486,7 @@ mod tests {
             "mock-provider",
             "mock-model",
             0.0,
+            "en",
             true,
             Some(&approval_mgr),
             "telegram",
@@ -4552,6 +4557,7 @@ mod tests {
             "mock-provider",
             "mock-model",
             0.0,
+            "en",
             true,
             None,
             "cli",
@@ -4614,6 +4620,7 @@ mod tests {
             "mock-provider",
             "mock-model",
             0.0,
+            "en",
             true,
             None,
             "cli",
@@ -4691,6 +4698,7 @@ mod tests {
             "mock-provider",
             "mock-model",
             0.0,
+            "en",
             true,
             None,
             "cli",
@@ -4745,6 +4753,7 @@ mod tests {
             "mock-provider",
             "mock-model",
             0.0,
+            "en",
             true,
             None,
             "cli",
@@ -6504,6 +6513,7 @@ Let me check the result."#;
         crate::tools::ToolSpec {
             name: name.to_string(),
             description: String::new(),
+            description_zh: None,
             parameters: serde_json::json!({}),
         }
     }
@@ -6643,6 +6653,7 @@ Let me check the result."#;
             "mock-provider",
             "mock-model",
             0.0,
+            "en",
             true,
             None,
             "telegram",

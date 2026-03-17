@@ -2433,6 +2433,7 @@ mod tests {
         let tools = vec![crate::tools::ToolSpec {
             name: "shell_exec".to_string(),
             description: "Execute shell command".to_string(),
+            description_zh: None,
             parameters: serde_json::json!({
                 "type": "object",
                 "properties": {
@@ -2587,6 +2588,7 @@ mod tests {
         let specs = vec![crate::tools::ToolSpec {
             name: "shell".to_string(),
             description: "Run shell command".to_string(),
+            description_zh: None,
             parameters: serde_json::json!({
                 "type": "object",
                 "properties": {"command": {"type": "string"}},

@@ -51,6 +51,7 @@ pub mod memory_store;
 pub mod model_routing_config;
 pub mod node_tool;
 pub mod pdf_read;
+pub mod playwright;
 pub mod proxy_config;
 pub mod pushover;
 pub mod schedule;
@@ -98,6 +99,7 @@ pub use model_routing_config::ModelRoutingConfigTool;
 #[allow(unused_imports)]
 pub use node_tool::NodeTool;
 pub use pdf_read::PdfReadTool;
+pub use playwright::PlaywrightTool;
 pub use proxy_config::ProxyConfigTool;
 pub use pushover::PushoverTool;
 pub use schedule::ScheduleTool;
@@ -317,6 +319,16 @@ pub fn all_tools_with_runtime(
                 max_coordinate_x: browser_config.computer_use.max_coordinate_x,
                 max_coordinate_y: browser_config.computer_use.max_coordinate_y,
             },
+        )));
+    }
+
+    if root_config.playwright.enabled {
+        tool_arcs.push(Arc::new(PlaywrightTool::new(
+            security.clone(),
+            root_config.playwright.endpoint.clone(),
+            root_config.playwright.api_key.clone(),
+            root_config.playwright.use_proxy,
+            root_config.playwright.allowed_domains.clone(),
         )));
     }
 
@@ -637,6 +649,7 @@ mod tests {
         let spec = ToolSpec {
             name: "test".into(),
             description: "A test tool".into(),
+            description_zh: None,
             parameters: serde_json::json!({"type": "object"}),
         };
         let json = serde_json::to_string(&spec).unwrap();

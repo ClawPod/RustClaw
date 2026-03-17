@@ -1437,9 +1437,10 @@ mod tests {
         let tools = vec![ToolSpec {
             name: "shell".to_string(),
             description: "Run commands".to_string(),
+            description_zh: None,
             parameters: serde_json::json!({"type": "object", "properties": {"command": {"type": "string"}}}),
         }];
-        let config = BedrockProvider::convert_tools_to_converse(Some(&tools));
+        let config = BedrockProvider::convert_tools_to_converse(Some(&tools), None);
         assert!(config.is_some());
         let config = config.unwrap();
         assert_eq!(config.tools.len(), 1);
@@ -1448,8 +1449,8 @@ mod tests {
 
     #[test]
     fn convert_tools_to_converse_empty_returns_none() {
-        assert!(BedrockProvider::convert_tools_to_converse(Some(&[])).is_none());
-        assert!(BedrockProvider::convert_tools_to_converse(None).is_none());
+        assert!(BedrockProvider::convert_tools_to_converse(Some(&[]), None).is_none());
+        assert!(BedrockProvider::convert_tools_to_converse(None, None).is_none());
     }
 
     // ── Serde tests ─────────────────────────────────────────────

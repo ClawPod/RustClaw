@@ -96,6 +96,7 @@ mod tests {
         McpToolDef {
             name: name.to_string(),
             description: description.map(str::to_string),
+            description_zh: None,
             input_schema: schema,
         }
     }

@@ -1199,16 +1199,18 @@ mod tests {
             ToolSpec {
                 name: "tool1".to_string(),
                 description: "First tool".to_string(),
+                description_zh: None,
                 parameters: serde_json::json!({"type": "object"}),
             },
             ToolSpec {
                 name: "tool2".to_string(),
                 description: "Second tool".to_string(),
+                description_zh: None,
                 parameters: serde_json::json!({"type": "object"}),
             },
         ];
 
-        let native_tools = AnthropicProvider::convert_tools(Some(&tools)).unwrap();
+        let native_tools = AnthropicProvider::convert_tools(Some(&tools), None).unwrap();
 
         assert_eq!(native_tools.len(), 2);
         assert!(native_tools[0].cache_control.is_none());
@@ -1220,10 +1222,11 @@ mod tests {
         let tools = vec![ToolSpec {
             name: "tool1".to_string(),
             description: "Only tool".to_string(),
+            description_zh: None,
             parameters: serde_json::json!({"type": "object"}),
         }];
 
-        let native_tools = AnthropicProvider::convert_tools(Some(&tools)).unwrap();
+        let native_tools = AnthropicProvider::convert_tools(Some(&tools), None).unwrap();
 
         assert_eq!(native_tools.len(), 1);
         assert!(native_tools[0].cache_control.is_some());

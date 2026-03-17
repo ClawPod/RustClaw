@@ -723,6 +723,7 @@ mod tests {
             ToolSpec {
                 name: "shell".to_string(),
                 description: "Execute commands".to_string(),
+                description_zh: None,
                 parameters: serde_json::json!({
                     "type": "object",
                     "properties": {
@@ -733,6 +734,7 @@ mod tests {
             ToolSpec {
                 name: "file_read".to_string(),
                 description: "Read files".to_string(),
+                description_zh: None,
                 parameters: serde_json::json!({
                     "type": "object",
                     "properties": {
@@ -742,7 +744,7 @@ mod tests {
             },
         ];
 
-        let instructions = build_tool_instructions_text(&tools);
+        let instructions = build_tool_instructions_text(&tools, None);
 
         // Check for protocol description
         assert!(instructions.contains("Tool Use Protocol"));
@@ -762,7 +764,7 @@ mod tests {
 
     #[test]
     fn build_tool_instructions_text_empty() {
-        let instructions = build_tool_instructions_text(&[]);
+        let instructions = build_tool_instructions_text(&[], None);
 
         // Should still have protocol description
         assert!(instructions.contains("Tool Use Protocol"));

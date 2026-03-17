@@ -234,6 +234,7 @@ mod tests {
         let def = McpToolDef {
             name: name.to_string(),
             description: Some(desc.to_string()),
+            description_zh: None,
             input_schema: serde_json::json!({"type": "object", "properties": {}}),
         };
         DeferredMcpToolStub::new(name.to_string(), def)
@@ -250,6 +251,7 @@ mod tests {
         let def = McpToolDef {
             name: "mystery".into(),
             description: None,
+            description_zh: None,
             input_schema: serde_json::json!({}),
         };
         let stub = DeferredMcpToolStub::new("srv__mystery".into(), def);
